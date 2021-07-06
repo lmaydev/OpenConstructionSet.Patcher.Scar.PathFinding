@@ -15,19 +15,24 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
-            <ColumnDefinition Width="269*" />
-            <ColumnDefinition Width="266*"/>
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="3*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid.Resources>
             <Style TargetType="TextBox">
                 <Setter Property="Margin" Value="0,12,12,0" />
+            </Style>
+            <Style TargetType="ListBox">
+                <Setter Property="Margin" Value="0,12,12,0" />
+            </Style>
+            <Style TargetType="Button">
+                <Setter Property="Padding" Value="6,0" />
             </Style>
             <Style TargetType="TextBlock">
                 <Setter Property="Margin" Value="12,12,12,0" />
@@ -35,15 +40,37 @@
             </Style>
         </Grid.Resources>
 
-        <TextBlock Grid.Row="0">Compatibility mod name:</TextBlock>
-        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ModName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2" />
+        <StackPanel>
+            <TextBlock VerticalAlignment="Center">Output mod path:</TextBlock>
+        </StackPanel>
 
-        <TextBlock Grid.Row="1">SCAR's pathfinding fix file location:</TextBlock>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ReferenceModPath, Mode=TwoWay}" Grid.ColumnSpan="2" />
+        <Grid Grid.Column="1" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox VerticalAlignment="Center" Text="{Binding NewModPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Margin="0,12,12,0" Grid.Column="1" HorizontalAlignment="Right" Command="{Binding BrowseNewMod}">Browse</Button>
+        </Grid>
 
-        <TextBlock Grid.Row="2">Mods to patch:</TextBlock>
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ModList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True" Grid.ColumnSpan="2"/>
+        <TextBlock Grid.Row="1">Mod folders:</TextBlock>
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True"/>
 
-        <Button Margin="0,12,12,12" Padding="6" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
+        <StackPanel Grid.Row="2">
+            <TextBlock >Mods to patch:</TextBlock>
+            <Button Margin="12" HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
+        </StackPanel>
+        <ListBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Mods}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding Selected}" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Button Margin="0,12,12,12" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
     </Grid>
 </Window>
