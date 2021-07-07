@@ -7,7 +7,7 @@
         xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
         mc:Ignorable="d"
         Title="OCS Content Patcher - SCAR's Pathfinding Fix" Height="450" Width="800"
-        FontSize="16"
+        FontSize="14"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=True}">
     <Window.DataContext>
         <vm:MainViewModel />
@@ -53,8 +53,8 @@
             <Button Margin="0,12,12,0" Grid.Column="1" HorizontalAlignment="Right" Command="{Binding BrowseNewMod}">Browse</Button>
         </Grid>
 
-        <TextBlock Grid.Row="1">Mod folders:</TextBlock>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True" MinLines="3"/>
+        <TextBlock Grid.Row="1">Folders to search for mods in:</TextBlock>
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True" MinLines="5" MaxLines="10" />
 
         <StackPanel Grid.Row="2">
             <TextBlock >Mods to patch:</TextBlock>
