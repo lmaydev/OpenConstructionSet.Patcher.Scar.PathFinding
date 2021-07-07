@@ -4,117 +4,211 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using OpenConstructionSet;
+using System.Windows;
+using Microsoft.Win32;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class MainViewModel : BaseViewModel
     {
-        private string referenceModPath;
-        private string modList;
+        const string referenceName = "SCAR's pathfinding fix.mod";
+
+        private IEnumerable<string> previousFolders;
+
         private string modName;
+        private string folderList;
 
-        public string ReferenceModPath
-        {
-            get => referenceModPath;
-            set
-            {
-                referenceModPath = value;
-                OnPropertyChanged(nameof(ReferenceModPath));
-            }
-        }
-
-        public string ModName
+        public string NewModPath
         {
             get => modName;
             set
             {
                 modName = value;
-                OnPropertyChanged(nameof(ModName));
+                OnPropertyChanged(nameof(NewModPath));
             }
         }
 
-        public string ModList
+        public string FolderList
         {
-            get => modList;
+            get => folderList;
             set
             {
-                modList = value;
-                OnPropertyChanged(nameof(ModList));
+                folderList = value;
+
+                if (!SplitFolders().OrderBy(f => f).SequenceEqual(previousFolders))
+                {
+                    RefreshExecute();
+                }
+
+                OnPropertyChanged(nameof(FolderList));
             }
         }
 
-        bool executing;
+        private bool processing;
+        private bool refreshing;
 
-        private string[] ModsToPatch => string.IsNullOrEmpty(ModList) ? Array.Empty<string>() : modList.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+        public bool Processing
+        {
+            get { return processing; }
+            set
+            {
+                processing = value;
+                OnPropertyChanged(nameof(Processing));
+            }
+        }
+
+        public bool Refreshing
+        {
+            get { return refreshing; }
+            set
+            {
+                refreshing = value;
+                OnPropertyChanged(nameof(Processing));
+            }
+        }
+
+
+        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
 
         public RelayCommand CreateMod { get; }
+
+        public RelayCommand RefreshMods { get; }
+
+        public RelayCommand BrowseNewMod { get; }
 
         public MainViewModel()
         {
             CreateMod = new RelayCommand(_ => StartCreateMod(), _ => CanCreateMod());
 
-            if (OcsSteamHelper.TryFindGameFolders(out var folders) && folders.ToArray().TryResolvePath("SCAR's pathfinding fix.mod", out var path))
+            RefreshMods = new RelayCommand(_ => RefreshExecute(), _ => IsBusy());
+
+            BrowseNewMod = new RelayCommand(_ => BrowseNewModExecute(), _ => IsBusy());
+
+            NewModPath = @"mods\new\new.mod";
+
+            var folders = new HashSet<string>();
+
+            if (OcsSteamHelper.TryFindGameFolders(out var gameFolders))
             {
-                referenceModPath = path;
+                folders.Add(gameFolders.Data.FolderPath);
+                folders.Add(gameFolders.Mod.FolderPath);
             }
+
+            folders.Add(Path.Combine(Environment.CurrentDirectory, "mods"));
+            folders.Add(Path.Combine(Environment.CurrentDirectory, "data"));
+
+            folderList = string.Join(Environment.NewLine, folders.Where(Directory.Exists)) + Environment.NewLine;
+
+            RefreshExecute();
         }
 
-        private bool CanCreateMod() => !executing && !string.IsNullOrEmpty(ModName) && !string.IsNullOrEmpty(ModList) && File.Exists(referenceModPath);
+        private bool CanCreateMod() => !Processing && !Refreshing && !string.IsNullOrEmpty(NewModPath) && Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewModPath);
+
+        private bool IsBusy() => !Refreshing && !Processing;
 
         private void StartCreateMod()
         {
-            executing = true;
+            Processing = true;
 
             Task.Run(CreateModExecute);
         }
 
         private void CreateModExecute()
         {
-            var reference = OcsHelper.LoadSaveFile(referenceModPath);
-
-            var mods = ModsToPatch;
-
-            var dependencies = mods.Select(Path.GetFileName).Distinct().ToList();
-
-            var description = "Compatability patch for SCAR's pathfinding fix (https://www.nexusmods.com/kenshi/mods/602) and the following mods:\n";
-            description += string.Join("\n", dependencies.Select(Path.GetFileNameWithoutExtension));
-            description += "\nCreated automatically using the OpenConstructionKit (https://github.com/lmaydev/OpenConstructionSet)";
-
-            var header = new GameData.Header
+            try
             {
-                Dependencies = dependencies,
-                Referenced = (new[] { Path.GetFileName(referenceModPath) }).ToList(),
-                Version = reference.header.Version,
-                Description = description,
-            };
+                var mods = Mods.Where(m => m.Selected).ToList();
 
-            if (!ModName.EndsWith(".mod"))
+                var folders = ParseFolders(previousFolders);
+
+                if (!folders.TryResolvePath(referenceName, out var referencePath))
+                {
+                    MessageBox.Show($"Could not find reference file ({referenceName})");
+                    return;
+                }
+
+                var reference = OcsHelper.LoadSaveFile(referencePath);
+
+                var modNames = new HashSet<string>(mods.Select(m => m.Name));
+
+                if (!FileHelper.TryGetFullPath(NewModPath, out var fullNewModPath))
+                {
+                    throw new Exception($"Failed to get full path ({NewModPath})");
+                }
+
+                CreateNewMod();
+
+                var data = OcsHelper.Load(mods.Select(m => m.Path), NewModPath, folders);
+
+                var referenceRace = reference.items["17-gamedata.quack"];
+
+                var pathFindAcceleration = referenceRace["pathfind acceleration"];
+                var waterAvoidence = referenceRace["water avoidance"];
+
+                foreach (var race in data.items.OfType(itemType.RACE).Where(r => modNames.Contains(r.Mod) && IsNotAnimal(r)))
+                {
+                    race["pathfind acceleration"] = pathFindAcceleration;
+                    race["water avoidance"] = waterAvoidence;
+                }
+
+                data.save(fullNewModPath);
+
+                MessageBox.Show($"Mod created successfully at {fullNewModPath}");
+
+                void CreateNewMod()
+                {
+                    var newModDirectory = Path.GetDirectoryName(fullNewModPath);
+                    var newModName = Path.GetFileName(fullNewModPath);
+
+                    if (!Directory.Exists(newModDirectory))
+                    {
+                        Directory.CreateDirectory(newModDirectory);
+                    }
+
+                    var header = new GameData.Header
+                    {
+                        Dependencies = modNames.ToList(),
+                        Referenced = new List<string>(),
+                        Version = reference.header.Version,
+                        Description = BuildDescription(),
+                    };
+
+                    header.Referenced.Add(referenceName);
+
+                    // HACK - NewMod doesn't accept a path so I split it
+                    OcsHelper.NewMod(header, newModName, new GameFolder(newModDirectory, GameFolderType.Data));
+                }
+
+                string BuildDescription()
+                {
+                    var builder = new StringBuilder();
+
+
+                    builder.AppendLine("Compatability patch for SCAR's pathfinding fix (https://www.nexusmods.com/kenshi/mods/602) and the following mods:");
+                    foreach (var modName in modNames.Select(Path.GetFileNameWithoutExtension))
+                    {
+                        builder.AppendLine(modName);
+                    }
+
+                    builder.AppendLine();
+                    builder.AppendLine("Created automatically using the OpenConstructionKit (https://github.com/lmaydev/OpenConstructionSet)");
+                    builder.AppendLine("Source code for the patcher is available at https://github.com/lmaydev/OpenConstructionSet.Patcher.Scar.PathFinding");
+
+                    return builder.ToString();
+                }
+            }
+            catch (Exception ex)
             {
-                ModName = $"{ModName}.mod";
+                MessageBox.Show($"Failed to create mod with error message:{ex.Message}");
+            }
+            finally
+            {
+                Processing = false;
             }
 
-            var path = OcsHelper.NewMod(header, ModName);
-
-            var data = OcsHelper.Load(mods, path);
-
-            var referenceRace = reference.items["17-gamedata.quack"];
-
-            foreach (var race in data.items.OfType(itemType.RACE).Where(r => dependencies.Contains(r.Mod)).Where(IsNotAnimal))
-            {
-                race["pathfind acceleration"] = referenceRace["pathfind acceleration"];
-                race["water avoidance"] = referenceRace["water avoidance"];
-            }
-
-            data.save(path);
-
-            System.Windows.MessageBox.Show($"Mod created successfully at {path}");
-
-            executing = false;
-
+            // HACK - not keen on this method of discovery
             bool IsNotAnimal(GameData.Item item)
             {
                 var editorLimits = item["editor limits"] as GameData.File;
@@ -122,5 +216,47 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                 return editorLimits != null && !string.IsNullOrEmpty(editorLimits.filename);
             }
         }
+
+        private void RefreshExecute()
+        {
+            previousFolders = SplitFolders().OrderBy(f => f).ToArray();
+
+            var mods = ParseFolders(previousFolders).SelectMany(f => f.Mods)
+                                                    .Where(p => p.Key != referenceName && p.Value != NewModPath && !OcsHelper.BaseMods.Contains(p.Key))
+                                                    .Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
+
+            Mods.Clear();
+
+            foreach (var mod in mods)
+            {
+                Mods.Add(mod);
+            }
+        }
+
+        private void BrowseNewModExecute()
+        {
+            var save = new SaveFileDialog
+            {
+                AddExtension = true,
+                CheckPathExists = true,
+                DefaultExt = ".mod",
+                Filter = "Mod File|*.mod",
+                ValidateNames = true
+            };
+
+            if (save.ShowDialog() == true)
+            {
+                NewModPath = save.FileName;
+            }
+        }
+
+        private IEnumerable<string> SplitFolders() => FolderList.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Where(Directory.Exists);
+
+        private IEnumerable<GameFolder> ParseFolders(IEnumerable<string> paths) => paths.SelectMany(path => new[] 
+                                                                                        { 
+                                                                                            // HACK - no support for dual types
+                                                                                            new GameFolder(path, GameFolderType.Data), 
+                                                                                            new GameFolder(path, GameFolderType.Mod) 
+                                                                                        });
     }
 }

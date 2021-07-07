@@ -7,7 +7,7 @@
     <ProjectGuid>{CE563065-EB8E-4434-A803-6D920764C6E3}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>OpenConstructionSet.Patcher.Scar.PathFinding</RootNamespace>
-    <AssemblyName>Patcher.Scar.PathFinding</AssemblyName>
+    <AssemblyName>OCS.Patcher.Scar.PathFinding</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -36,10 +36,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="forgotten construction set">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Kenshi\forgotten construction set.exe</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kenshi\forgotten construction set.exe</HintPath>
     </Reference>
-    <Reference Include="OpenConstructionSet, Version=0.4.3.0, Culture=neutral, processorArchitecture=x86">
-      <HintPath>packages\OpenConstructionSet.0.4.3\lib\net48\OpenConstructionSet.dll</HintPath>
+    <Reference Include="OpenConstructionSet, Version=0.4.4.0, Culture=neutral, processorArchitecture=x86">
+      <HintPath>packages\OpenConstructionSet.0.4.4\lib\net48\OpenConstructionSet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -62,9 +62,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="FileHelper.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="ViewModel\BaseViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
+    <Compile Include="ViewModel\ModViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
