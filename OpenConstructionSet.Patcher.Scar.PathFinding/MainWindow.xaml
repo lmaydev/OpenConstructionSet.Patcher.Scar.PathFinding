@@ -20,7 +20,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="3*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
@@ -54,7 +54,7 @@
         </Grid>
 
         <TextBlock Grid.Row="1">Mod folders:</TextBlock>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True" MinLines="3"/>
 
         <StackPanel Grid.Row="2">
             <TextBlock >Mods to patch:</TextBlock>

@@ -80,13 +80,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         {
             try
             {
-                var mods = Mods.Where(m => m.Selected && m.Name != referenceName).ToList();
-
-                if (mods.Count == 0)
-                {
-                    MessageBox.Show("No mods selected");
-                    return;
-                }
+                var mods = Mods.Where(m => m.Selected).ToList();
 
                 var folders = ParseFolders();
 
@@ -157,7 +151,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         private void RefreshExecute()
         {
             var mods = ParseFolders().SelectMany(f => f.Mods)
-                                      .Where(p => !OcsHelper.BaseMods.Contains(p.Key))
+                                      .Where(p => p.Key != referenceName && p.Value != NewModPath && !OcsHelper.BaseMods.Contains(p.Key))
                                       .Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
 
             Mods.Clear();
