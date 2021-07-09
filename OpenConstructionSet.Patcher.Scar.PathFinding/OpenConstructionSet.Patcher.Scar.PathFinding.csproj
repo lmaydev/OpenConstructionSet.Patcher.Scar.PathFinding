@@ -14,6 +14,8 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <KenshiFolder>C:\Program Files (x86)\Steam\steamapps\common\Kenshi\</KenshiFolder>
+    <StartWorkingDirectory>$(KenshiFolder)</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,12 +36,15 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>OCS_logo_project_3.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="forgotten construction set">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Kenshi\forgotten construction set.exe</HintPath>
+      <HintPath>$(KenshiFolder)forgotten construction set.exe</HintPath>
     </Reference>
-    <Reference Include="OpenConstructionSet, Version=0.4.4.0, Culture=neutral, processorArchitecture=x86">
-      <HintPath>packages\OpenConstructionSet.0.4.4\lib\net48\OpenConstructionSet.dll</HintPath>
+    <Reference Include="OpenConstructionSet, Version=0.5.1.0, Culture=neutral, processorArchitecture=x86">
+      <HintPath>packages\OpenConstructionSet.0.5.1\lib\net48\OpenConstructionSet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -62,11 +67,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CollectionExtensions.cs" />
     <Compile Include="FileHelper.cs" />
+    <Compile Include="Infrastructure\InverseBoolValueConverter.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="ViewModel\BaseViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ModViewModel.cs" />
+    <Compile Include="WpfExtensions.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -106,6 +114,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="OCS_logo_project_3.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

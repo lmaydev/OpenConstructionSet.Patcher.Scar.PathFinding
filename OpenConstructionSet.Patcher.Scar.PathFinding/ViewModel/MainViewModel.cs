@@ -15,57 +15,21 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
     {
         const string referenceName = "SCAR's pathfinding fix.mod";
 
-        private IEnumerable<string> previousFolders;
+        private bool busy;
 
-        private string modName;
-        private string folderList;
+        public ObservableCollection<GameFolder> Folders { get; } = new ObservableCollection<GameFolder>();
 
-        public string NewModPath
+        public GameFolder CurrentFolder { get; set; }
+
+        public string NewMod { get; set; }
+
+        public bool Busy
         {
-            get => modName;
+            get { return busy; }
             set
             {
-                modName = value;
-                OnPropertyChanged(nameof(NewModPath));
-            }
-        }
-
-        public string FolderList
-        {
-            get => folderList;
-            set
-            {
-                folderList = value;
-
-                if (!SplitFolders().OrderBy(f => f).SequenceEqual(previousFolders))
-                {
-                    RefreshExecute();
-                }
-
-                OnPropertyChanged(nameof(FolderList));
-            }
-        }
-
-        private bool processing;
-        private bool refreshing;
-
-        public bool Processing
-        {
-            get { return processing; }
-            set
-            {
-                processing = value;
-                OnPropertyChanged(nameof(Processing));
-            }
-        }
-
-        public bool Refreshing
-        {
-            get { return refreshing; }
-            set
-            {
-                refreshing = value;
-                OnPropertyChanged(nameof(Processing));
+                busy = value;
+                OnPropertyChanged(nameof(Busy));
             }
         }
 
@@ -76,41 +40,77 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
         public RelayCommand RefreshMods { get; }
 
-        public RelayCommand BrowseNewMod { get; }
+        public RelayCommand AddFolder { get; }
+
+        public RelayCommand RemoveFolder { get; }
+
+        public RelayCommand SelectAll { get; }
+
+        public RelayCommand SelectNone { get; }
 
         public MainViewModel()
         {
             CreateMod = new RelayCommand(_ => StartCreateMod(), _ => CanCreateMod());
 
-            RefreshMods = new RelayCommand(_ => RefreshExecute(), _ => IsBusy());
+            RefreshMods = new RelayCommand(_ => RefreshExecute(), _ => IsNotBusy());
 
-            BrowseNewMod = new RelayCommand(_ => BrowseNewModExecute(), _ => IsBusy());
+            AddFolder = new RelayCommand(_ => AddFolderExecute(), _ => IsNotBusy());
 
-            NewModPath = @"mods\new\new.mod";
+            RemoveFolder = new RelayCommand(_ => RemoveFolderExecute(), _ => CanRemoveFolder());
 
-            var folders = new HashSet<string>();
+            SelectAll = new RelayCommand(_ => SelectAllExecute(), _ => IsNotBusy());
+            SelectNone = new RelayCommand(_ => SelectNoneExecute(), _ => IsNotBusy());
 
-            if (OcsSteamHelper.TryFindGameFolders(out var gameFolders))
-            {
-                folders.Add(gameFolders.Data.FolderPath);
-                folders.Add(gameFolders.Mod.FolderPath);
-            }
+            NewMod = "Compatibility SCAR's pathfinding fix";
 
-            folders.Add(Path.Combine(Environment.CurrentDirectory, "mods"));
-            folders.Add(Path.Combine(Environment.CurrentDirectory, "data"));
+            Folders.Add(OcsHelper.LocalFolders.Data);
+            Folders.Add(OcsHelper.LocalFolders.Mod);
 
-            folderList = string.Join(Environment.NewLine, folders.Where(Directory.Exists)) + Environment.NewLine;
+            Folders.CollectionChanged += (_, __) => RefreshExecute();
 
             RefreshExecute();
         }
 
-        private bool CanCreateMod() => !Processing && !Refreshing && !string.IsNullOrEmpty(NewModPath) && Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewModPath);
+        private void SelectNoneExecute()
+        {
+            Mods.ForEach(m => m.Selected = false);
+        }
 
-        private bool IsBusy() => !Refreshing && !Processing;
+        private void SelectAllExecute()
+        {
+            Mods.ForEach(m => m.Selected = true);
+        }
+
+        private bool CanRemoveFolder() => CurrentFolder != null && IsNotBusy();
+
+        private void RemoveFolderExecute()
+        {
+            Folders.Remove(CurrentFolder);
+        }
+
+        private bool CanCreateMod() => !Busy && !string.IsNullOrEmpty(NewMod) && Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewMod);
+
+        private bool IsNotBusy() => !Busy;
+
+        private void AddFolderExecute()
+        {
+            var folder = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select a new mod folder to use",
+                ShowNewFolderButton = true,
+            };
+
+            var owner = Application.Current.MainWindow.AsWin32();
+
+            if (folder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Folders.Add(new GameFolder(folder.SelectedPath, GameFolderType.Both));
+            }
+        }
 
         private void StartCreateMod()
         {
-            Processing = true;
+            Busy = true;
 
             Task.Run(CreateModExecute);
         }
@@ -121,9 +121,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             {
                 var mods = Mods.Where(m => m.Selected).ToList();
 
-                var folders = ParseFolders(previousFolders);
+                Folders.ForEach(f => f.Populate());
 
-                if (!folders.TryResolvePath(referenceName, out var referencePath))
+                if (!Folders.TryResolvePath(referenceName, out var referencePath))
                 {
                     MessageBox.Show($"Could not find reference file ({referenceName})");
                     return;
@@ -133,14 +133,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 var modNames = new HashSet<string>(mods.Select(m => m.Name));
 
-                if (!FileHelper.TryGetFullPath(NewModPath, out var fullNewModPath))
-                {
-                    throw new Exception($"Failed to get full path ({NewModPath})");
-                }
+                var modPath = CreateNewMod();
 
-                CreateNewMod();
-
-                var data = OcsHelper.Load(mods.Select(m => m.Path), NewModPath, folders);
+                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders);
 
                 var referenceRace = reference.items["17-gamedata.quack"];
 
@@ -153,20 +148,12 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                     race["water avoidance"] = waterAvoidence;
                 }
 
-                data.save(fullNewModPath);
+                data.save(modPath);
 
-                MessageBox.Show($"Mod created successfully at {fullNewModPath}");
+                MessageBox.Show($"Mod created successfully at {modPath}");
 
-                void CreateNewMod()
+                string CreateNewMod()
                 {
-                    var newModDirectory = Path.GetDirectoryName(fullNewModPath);
-                    var newModName = Path.GetFileName(fullNewModPath);
-
-                    if (!Directory.Exists(newModDirectory))
-                    {
-                        Directory.CreateDirectory(newModDirectory);
-                    }
-
                     var header = new GameData.Header
                     {
                         Dependencies = modNames.ToList(),
@@ -177,8 +164,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                     header.Referenced.Add(referenceName);
 
-                    // HACK - NewMod doesn't accept a path so I split it
-                    OcsHelper.NewMod(header, newModName, new GameFolder(newModDirectory, GameFolderType.Data));
+                    return OcsHelper.NewMod(header, NewMod);
                 }
 
                 string BuildDescription()
@@ -205,7 +191,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
             finally
             {
-                Processing = false;
+                Busy = false;
             }
 
             // HACK - not keen on this method of discovery
@@ -219,44 +205,16 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
         private void RefreshExecute()
         {
-            previousFolders = SplitFolders().OrderBy(f => f).ToArray();
+            Folders.ForEach(f => f.Populate());
 
-            var mods = ParseFolders(previousFolders).SelectMany(f => f.Mods)
-                                                    .Where(p => p.Key != referenceName && p.Value != NewModPath && !OcsHelper.BaseMods.Contains(p.Key))
-                                                    .Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
+            var mods = Folders.SelectMany(f => f.Mods)
+                              // Not the reference mod, the new mod or a base file
+                              .Where(p => p.Key != referenceName && !p.Key.StartsWith(NewMod) && !OcsHelper.BaseMods.Contains(p.Key))
+                              .Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
 
             Mods.Clear();
 
-            foreach (var mod in mods)
-            {
-                Mods.Add(mod);
-            }
+            mods.ForEach(m => Mods.Add(m));
         }
-
-        private void BrowseNewModExecute()
-        {
-            var save = new SaveFileDialog
-            {
-                AddExtension = true,
-                CheckPathExists = true,
-                DefaultExt = ".mod",
-                Filter = "Mod File|*.mod",
-                ValidateNames = true
-            };
-
-            if (save.ShowDialog() == true)
-            {
-                NewModPath = save.FileName;
-            }
-        }
-
-        private IEnumerable<string> SplitFolders() => FolderList.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).Where(Directory.Exists);
-
-        private IEnumerable<GameFolder> ParseFolders(IEnumerable<string> paths) => paths.SelectMany(path => new[] 
-                                                                                        { 
-                                                                                            // HACK - no support for dual types
-                                                                                            new GameFolder(path, GameFolderType.Data), 
-                                                                                            new GameFolder(path, GameFolderType.Mod) 
-                                                                                        });
     }
 }

@@ -5,10 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding"
         xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
+        xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" Height="450" Width="800"
-        FontSize="14"
+        Title="OCS Content Patcher - SCAR's Pathfinding Fix" Height="600" Width="800"
+        FontSize="16"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=True}">
+    <Window.Resources>
+        <i:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
+    </Window.Resources>
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
@@ -41,35 +45,62 @@
         </Grid.Resources>
 
         <StackPanel>
-            <TextBlock VerticalAlignment="Center">Output mod path:</TextBlock>
+            <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
         </StackPanel>
 
-        <Grid Grid.Column="1" >
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="auto" />
-            </Grid.ColumnDefinitions>
-            <TextBox VerticalAlignment="Center" Text="{Binding NewModPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Margin="0,12,12,0" Grid.Column="1" HorizontalAlignment="Right" Command="{Binding BrowseNewMod}">Browse</Button>
-        </Grid>
+        <TextBox Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBlock Grid.Row="1">Folders to search for mods in:</TextBlock>
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FolderList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"  AcceptsReturn="True" MinLines="5" MaxLines="10" />
+        <TextBlock Grid.Row="1">Mod Folders:</TextBlock>
+
+        <Expander Margin="0,12,0,0" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
+            <Grid Grid.Row="1" Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <ListBox ItemsSource="{Binding Folders}" SelectedItem="{Binding CurrentFolder}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Margin="0" Text="{Binding FolderPath}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Orientation="Horizontal" Grid.Row="1" >
+                    <Button Grid.Row="1" Margin="0,12,0,12" Command="{Binding AddFolder}">Add</Button>
+                    <Button Grid.Row="1" Margin="12,12,0,12" Command="{Binding RemoveFolder}">Remove</Button>
+                </StackPanel>
+            </Grid>
+        </Expander>
 
         <StackPanel Grid.Row="2">
             <TextBlock >Mods to patch:</TextBlock>
-            <Button Margin="12" HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
         </StackPanel>
-        <ListBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Mods}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox IsChecked="{Binding Selected}" />
-                        <TextBlock Text="{Binding Name}" />
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+
+        <Grid Grid.Row="2" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal">
+                <Button Margin="0,12,0,12" HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
+                <TextBlock>Select</TextBlock>
+                <Button Margin="0,12" Grid.Row="1" HorizontalAlignment="Right" Command="{Binding SelectAll}">All</Button>
+                <TextBlock>|</TextBlock>
+                <Button Margin="0,12" Command="{Binding SelectNone}">None</Button>
+            </StackPanel>
+
+            <ListBox Margin="0,0,12,0" Grid.Row="1" ItemsSource="{Binding Mods}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox VerticalAlignment="Center" Margin="0,0,6,0" IsChecked="{Binding Selected}" />
+                            <TextBlock Text="{Binding Name}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
 
         <Button Margin="0,12,12,12" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
     </Grid>
