@@ -123,30 +123,17 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 Folders.ForEach(f => f.Populate());
 
-                if (!Folders.TryResolvePath(referenceName, out var referencePath))
-                {
-                    MessageBox.Show($"Could not find reference file ({referenceName})");
-                    return;
-                }
-
-                var reference = OcsHelper.LoadSaveFile(referencePath);
-
                 var modNames = new HashSet<string>(mods.Select(m => m.Name));
 
                 var modPath = CreateNewMod();
 
                 var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders);
 
-                var referenceRace = reference.items["17-gamedata.quack"];
-
-                var pathFindAcceleration = referenceRace["pathfind acceleration"];
-                var waterAvoidence = referenceRace["water avoidance"];
-
-                foreach (var race in data.items.OfType(itemType.RACE).Where(r => modNames.Contains(r.Mod) && IsNotAnimal(r)))
+                var context = new PatchContext(data)
                 {
-                    race["pathfind acceleration"] = pathFindAcceleration;
-                    race["water avoidance"] = waterAvoidence;
-                }
+                    Folders = Folders.ToArray(),
+                    Mods = mods.ToDictionary(m => m.Name, m => m.Path),
+                };
 
                 data.save(modPath);
 
@@ -158,31 +145,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                     {
                         Dependencies = modNames.ToList(),
                         Referenced = new List<string>(),
-                        Version = reference.header.Version,
-                        Description = BuildDescription(),
                     };
 
-                    header.Referenced.Add(referenceName);
-
                     return OcsHelper.NewMod(header, NewMod);
-                }
-
-                string BuildDescription()
-                {
-                    var builder = new StringBuilder();
-
-
-                    builder.AppendLine("Compatability patch for SCAR's pathfinding fix (https://www.nexusmods.com/kenshi/mods/602) and the following mods:");
-                    foreach (var modName in modNames.Select(Path.GetFileNameWithoutExtension))
-                    {
-                        builder.AppendLine(modName);
-                    }
-
-                    builder.AppendLine();
-                    builder.AppendLine("Created automatically using the OpenConstructionKit (https://github.com/lmaydev/OpenConstructionSet)");
-                    builder.AppendLine("Source code for the patcher is available at https://github.com/lmaydev/OpenConstructionSet.Patcher.Scar.PathFinding");
-
-                    return builder.ToString();
                 }
             }
             catch (Exception ex)
@@ -192,14 +157,6 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             finally
             {
                 Busy = false;
-            }
-
-            // HACK - not keen on this method of discovery
-            bool IsNotAnimal(GameData.Item item)
-            {
-                var editorLimits = item["editor limits"] as GameData.File;
-
-                return editorLimits != null && !string.IsNullOrEmpty(editorLimits.filename);
             }
         }
 
