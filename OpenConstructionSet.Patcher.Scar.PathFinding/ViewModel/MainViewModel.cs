@@ -13,8 +13,6 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class MainViewModel : BaseViewModel
     {
-        const string referenceName = "SCAR's pathfinding fix.mod";
-
         private bool busy;
 
         public ObservableCollection<GameFolder> Folders { get; } = new ObservableCollection<GameFolder>();
@@ -135,6 +133,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                     Mods = mods.ToDictionary(m => m.Name, m => m.Path),
                 };
 
+                new ScarPathfindingFixPatcher().Patch(context);
+
                 data.save(modPath);
 
                 MessageBox.Show($"Mod created successfully at {modPath}");
@@ -165,13 +165,26 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             Folders.ForEach(f => f.Populate());
 
             var mods = Folders.SelectMany(f => f.Mods)
-                              // Not the reference mod, the new mod or a base file
-                              .Where(p => p.Key != referenceName && !p.Key.StartsWith(NewMod) && !OcsHelper.BaseMods.Contains(p.Key))
-                              .Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
+                             // Not the reference mod, the new mod or a base file
+                             .Where(p => !OcsHelper.BaseMods.Contains(p.Key))
+                             // Group by mod name
+                             .GroupBy(p => p.Key, p => p.Value)
+                             // Convert to dictionary by taking first item from group
+                             .ToDictionary(g => g.Key, g => g.First());
+
+
+            //.Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
 
             Mods.Clear();
 
-            mods.ForEach(m => Mods.Add(m));
+            foreach (var loadOrderItem in LoadOrder.Read().Where(i => mods.ContainsKey(i)))
+            {
+                Mods.Add(new ModViewModel { Name = loadOrderItem, Path = mods[loadOrderItem], Selected = true });
+
+                mods.Remove(loadOrderItem);
+            }
+
+            mods.ForEach(p => Mods.Add(new ModViewModel { Name = p.Key, Path = p.Value }));
         }
     }
 }

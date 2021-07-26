@@ -5,11 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding"
         xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
+        xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
         xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" Height="600" Width="800"
+        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="300" MinWidth="680" WindowState="Maximized"
         FontSize="16"
-        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=True}">
+        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
     <Window.Resources>
         <i:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
     </Window.Resources>
@@ -30,16 +31,18 @@
         </Grid.RowDefinitions>
         <Grid.Resources>
             <Style TargetType="TextBox">
-                <Setter Property="Margin" Value="0,12,12,0" />
+                <Setter Property="Margin" Value="0,6,6,0" />
             </Style>
             <Style TargetType="ListBox">
-                <Setter Property="Margin" Value="0,12,12,0" />
+                <Setter Property="Margin" Value="0,6,6,0" />
             </Style>
             <Style TargetType="Button">
-                <Setter Property="Padding" Value="6,0" />
+                <Setter Property="Padding" Value="6" />
+                <Setter Property="Margin" Value="6" />
+                <Setter Property="Width" Value="100" />
             </Style>
             <Style TargetType="TextBlock">
-                <Setter Property="Margin" Value="12,12,12,0" />
+                <Setter Property="Margin" Value="6" />
                 <Setter Property="TextAlignment" Value="Right" />
             </Style>
         </Grid.Resources>
@@ -82,26 +85,28 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <Button Margin="0,12,0,12" HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
-                <TextBlock>Select</TextBlock>
-                <Button Margin="0,12" Grid.Row="1" HorizontalAlignment="Right" Command="{Binding SelectAll}">All</Button>
-                <TextBlock>|</TextBlock>
-                <Button Margin="0,12" Command="{Binding SelectNone}">None</Button>
-            </StackPanel>
+            <DockPanel>
+                <Button HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
+                <TextBlock Padding="6" Margin="0,12" >Select</TextBlock>
+                <Button Command="{Binding SelectAll}">All</Button>
+                <TextBlock Padding="6" Margin="0,12">|</TextBlock>
+                <Button Command="{Binding SelectNone}">None</Button>
 
-            <ListBox Margin="0,0,12,0" Grid.Row="1" ItemsSource="{Binding Mods}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
-                <ListBox.ItemTemplate>
+                <Button Width="auto" HorizontalAlignment="Right" Command="{Binding SelectNone}">Save Load Order</Button>
+            </DockPanel>
+
+            <v:DragItemsControl Margin="0,0,12,0" Grid.Row="1" ItemsSource="{Binding Mods}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
+                <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
                             <CheckBox VerticalAlignment="Center" Margin="0,0,6,0" IsChecked="{Binding Selected}" />
                             <TextBlock Text="{Binding Name}" />
                         </StackPanel>
                     </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                </ItemsControl.ItemTemplate>
+            </v:DragItemsControl>
         </Grid>
 
-        <Button Margin="0,12,12,12" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
+        <Button HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
     </Grid>
 </Window>
