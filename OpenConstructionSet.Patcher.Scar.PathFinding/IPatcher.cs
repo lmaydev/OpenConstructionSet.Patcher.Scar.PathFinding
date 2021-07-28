@@ -38,10 +38,17 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding
             var pathFindAcceleration = referenceRace["pathfind acceleration"];
             var waterAvoidence = referenceRace["water avoidance"];
 
-            foreach (var race in context.GameData.items.OfType(itemType.RACE).Where(r => context.Mods.Keys.Contains(r.Mod) && IsNotAnimal(r)))
+            foreach (var race in context.GameData.items.OfType(itemType.RACE).Where(r => context.Mods.Keys.Contains(r.Mod) && IsNotAnimal(r) && IsNotDeleted(r)))
             {
                 race["pathfind acceleration"] = pathFindAcceleration;
                 race["water avoidance"] = waterAvoidence;
+            }
+
+            bool IsNotDeleted(GameData.Item item)
+            {
+                var state = item.getState();
+
+                return state != GameData.State.REMOVED && state != GameData.State.LOCKED_REMOVED;
             }
 
             // HACK - not keen on this method of discovery

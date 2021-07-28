@@ -11,7 +11,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding
     {
         private static readonly string configFile = Path.Combine(OcsHelper.LocalFolders.Data.FolderPath, "mods.cfg");
 
-        public static IEnumerable<string> Read() => File.Exists(configFile) ? File.ReadAllLines(configFile) : Enumerable.Empty<string>();
+        public static string[] Read() => File.Exists(configFile) ? File.ReadAllLines(configFile) : Array.Empty<string>();
 
         public static void Save(string[] mods)
         {

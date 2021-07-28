@@ -46,6 +46,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
         public RelayCommand SelectNone { get; }
 
+        public RelayCommand SaveLoadOrder { get; }
+
         public MainViewModel()
         {
             CreateMod = new RelayCommand(_ => StartCreateMod(), _ => CanCreateMod());
@@ -58,6 +60,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
             SelectAll = new RelayCommand(_ => SelectAllExecute(), _ => IsNotBusy());
             SelectNone = new RelayCommand(_ => SelectNoneExecute(), _ => IsNotBusy());
+
+            SaveLoadOrder = new RelayCommand(_ => SaveLoadOrderExecute(), _ => IsNotBusy());
 
             NewMod = "Compatibility SCAR's pathfinding fix";
 
@@ -102,7 +106,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
             if (folder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                Folders.Add(new GameFolder(folder.SelectedPath, GameFolderType.Both));
+                Folders.Add(new GameFolder(folder.SelectedPath));
             }
         }
 
@@ -121,11 +125,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 Folders.ForEach(f => f.Populate());
 
-                var modNames = new HashSet<string>(mods.Select(m => m.Name));
-
                 var modPath = CreateNewMod();
 
-                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders);
+                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders, resolveDependencies: false);
 
                 var context = new PatchContext(data)
                 {
@@ -137,13 +139,24 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 data.save(modPath);
 
-                MessageBox.Show($"Mod created successfully at {modPath}");
+                if (MessageBox.Show($"Mod created successfully at {modPath}\nWould you like to add it to the game's load order?", "Mod created!", MessageBoxButton.YesNo)
+                     == MessageBoxResult.Yes)
+                {
+                    var loadOrder = LoadOrder.Read().ToList();
+
+                    if (string.IsNullOrWhiteSpace(Path.GetExtension(NewMod)))
+                        loadOrder.Add(NewMod + ".mod");
+                    else
+                        loadOrder.Add(NewMod);
+                }
 
                 string CreateNewMod()
                 {
+                    var modNames = mods.Select(m => m.Name).ToList();
+
                     var header = new GameData.Header
                     {
-                        Dependencies = modNames.ToList(),
+                        Dependencies = modNames,
                         Referenced = new List<string>(),
                     };
 
@@ -185,6 +198,13 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
 
             mods.ForEach(p => Mods.Add(new ModViewModel { Name = p.Key, Path = p.Value }));
+        }
+
+        private void SaveLoadOrderExecute()
+        {
+            var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
+
+            LoadOrder.Save(mods);
         }
     }
 }
