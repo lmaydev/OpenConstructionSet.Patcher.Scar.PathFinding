@@ -78,6 +78,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
 
             LoadOrder.Save(mods);
+
+            MessageBox.Show("Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

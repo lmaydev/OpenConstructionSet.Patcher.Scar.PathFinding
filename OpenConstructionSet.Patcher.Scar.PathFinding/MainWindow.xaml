@@ -18,7 +18,7 @@
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
-    <Grid Margin="12">
+    <Grid Margin="12" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Width="*" />
