@@ -15,10 +15,6 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
     {
         private bool busy;
 
-        public ObservableCollection<GameFolder> Folders { get; } = new ObservableCollection<GameFolder>();
-
-        public GameFolder CurrentFolder { get; set; }
-
         public string NewMod { get; set; }
 
         public bool Busy
@@ -31,84 +27,26 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
+        public FoldersViewModel Folders { get; }
 
-        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
-
+        public LoadOrderViewModel LoadOrder { get; }
+        
         public RelayCommand CreateMod { get; }
-
-        public RelayCommand RefreshMods { get; }
-
-        public RelayCommand AddFolder { get; }
-
-        public RelayCommand RemoveFolder { get; }
-
-        public RelayCommand SelectAll { get; }
-
-        public RelayCommand SelectNone { get; }
-
-        public RelayCommand SaveLoadOrder { get; }
 
         public MainViewModel()
         {
             CreateMod = new RelayCommand(_ => StartCreateMod(), _ => CanCreateMod());
 
-            RefreshMods = new RelayCommand(_ => RefreshExecute(), _ => IsNotBusy());
+            Folders = new FoldersViewModel();
 
-            AddFolder = new RelayCommand(_ => AddFolderExecute(), _ => IsNotBusy());
+            LoadOrder = new LoadOrderViewModel(Folders.Folders);
 
-            RemoveFolder = new RelayCommand(_ => RemoveFolderExecute(), _ => CanRemoveFolder());
-
-            SelectAll = new RelayCommand(_ => SelectAllExecute(), _ => IsNotBusy());
-            SelectNone = new RelayCommand(_ => SelectNoneExecute(), _ => IsNotBusy());
-
-            SaveLoadOrder = new RelayCommand(_ => SaveLoadOrderExecute(), _ => IsNotBusy());
+            Folders.Folders.CollectionChanged += (_, __) => LoadOrder.RefreshExecute();
 
             NewMod = "Compatibility SCAR's pathfinding fix";
-
-            Folders.Add(OcsHelper.LocalFolders.Data);
-            Folders.Add(OcsHelper.LocalFolders.Mod);
-
-            Folders.CollectionChanged += (_, __) => RefreshExecute();
-
-            RefreshExecute();
         }
 
-        private void SelectNoneExecute()
-        {
-            Mods.ForEach(m => m.Selected = false);
-        }
-
-        private void SelectAllExecute()
-        {
-            Mods.ForEach(m => m.Selected = true);
-        }
-
-        private bool CanRemoveFolder() => CurrentFolder != null && IsNotBusy();
-
-        private void RemoveFolderExecute()
-        {
-            Folders.Remove(CurrentFolder);
-        }
-
-        private bool CanCreateMod() => !Busy && !string.IsNullOrEmpty(NewMod) && Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewMod);
-
-        private bool IsNotBusy() => !Busy;
-
-        private void AddFolderExecute()
-        {
-            var folder = new System.Windows.Forms.FolderBrowserDialog
-            {
-                Description = "Select a new mod folder to use",
-                ShowNewFolderButton = true,
-            };
-
-            var owner = Application.Current.MainWindow.AsWin32();
-
-            if (folder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                Folders.Add(new GameFolder(folder.SelectedPath));
-            }
-        }
+        private bool CanCreateMod() => !Busy && !string.IsNullOrWhiteSpace(NewMod) && LoadOrder.Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewMod);
 
         private void StartCreateMod()
         {
@@ -121,17 +59,17 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         {
             try
             {
-                var mods = Mods.Where(m => m.Selected).ToList();
+                var mods = LoadOrder.Mods.Where(m => m.Selected).ToList();
 
-                Folders.ForEach(f => f.Populate());
+                Folders.Folders.ForEach(f => f.Populate());
 
                 var modPath = CreateNewMod();
 
-                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders, resolveDependencies: false);
+                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders.Folders, resolveDependencies: false);
 
                 var context = new PatchContext(data)
                 {
-                    Folders = Folders.ToArray(),
+                    Folders = Folders.Folders.ToArray(),
                     Mods = mods.ToDictionary(m => m.Name, m => m.Path),
                 };
 
@@ -139,16 +77,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 data.save(modPath);
 
-                if (MessageBox.Show($"Mod created successfully at {modPath}\nWould you like to add it to the game's load order?", "Mod created!", MessageBoxButton.YesNo)
-                     == MessageBoxResult.Yes)
-                {
-                    var loadOrder = LoadOrder.Read().ToList();
-
-                    if (string.IsNullOrWhiteSpace(Path.GetExtension(NewMod)))
-                        loadOrder.Add(NewMod + ".mod");
-                    else
-                        loadOrder.Add(NewMod);
-                }
+                MessageBox.Show($"Mod created successfully", "Mod created!");
 
                 string CreateNewMod()
                 {
@@ -171,40 +100,6 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             {
                 Busy = false;
             }
-        }
-
-        private void RefreshExecute()
-        {
-            Folders.ForEach(f => f.Populate());
-
-            var mods = Folders.SelectMany(f => f.Mods)
-                             // Not the reference mod, the new mod or a base file
-                             .Where(p => !OcsHelper.BaseMods.Contains(p.Key))
-                             // Group by mod name
-                             .GroupBy(p => p.Key, p => p.Value)
-                             // Convert to dictionary by taking first item from group
-                             .ToDictionary(g => g.Key, g => g.First());
-
-
-            //.Select(p => new ModViewModel { Name = p.Key, Path = p.Value });
-
-            Mods.Clear();
-
-            foreach (var loadOrderItem in LoadOrder.Read().Where(i => mods.ContainsKey(i)))
-            {
-                Mods.Add(new ModViewModel { Name = loadOrderItem, Path = mods[loadOrderItem], Selected = true });
-
-                mods.Remove(loadOrderItem);
-            }
-
-            mods.ForEach(p => Mods.Add(new ModViewModel { Name = p.Key, Path = p.Value }));
-        }
-
-        private void SaveLoadOrderExecute()
-        {
-            var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
-
-            LoadOrder.Save(mods);
         }
     }
 }

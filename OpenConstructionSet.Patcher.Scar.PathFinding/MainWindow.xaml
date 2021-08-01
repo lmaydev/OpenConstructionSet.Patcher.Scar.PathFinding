@@ -8,8 +8,8 @@
         xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
         xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="300" MinWidth="680" WindowState="Maximized"
-        Height="403" Width="680"
+        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="350" MinWidth="720" WindowState="Maximized"
+        Height="350" Width="720"
         FontSize="16"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
     <Window.Resources>
@@ -18,7 +18,7 @@
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
-    <Grid>
+    <Grid Margin="12">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Width="*" />
@@ -27,94 +27,26 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
-            <RowDefinition Height="3*" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid.Resources>
-            <Style TargetType="TextBox">
-                <Setter Property="Margin" Value="0,6,6,0" />
-            </Style>
-            <Style TargetType="ListBox">
-                <Setter Property="Margin" Value="0,6,6,0" />
-            </Style>
-            <Style TargetType="Button">
-                <Setter Property="Height" Value="30" />
-                <Setter Property="Padding" Value="6,0" />
-                <Setter Property="Margin" Value="6" />
-                <Setter Property="Width" Value="80" />
-            </Style>
-            <Style TargetType="TextBlock">
-                <Setter Property="Margin" Value="6" />
-                <Setter Property="TextAlignment" Value="Right" />
-            </Style>
         </Grid.Resources>
 
-        <StackPanel>
-            <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
-        </StackPanel>
+        <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
 
-        <TextBox Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox Margin="6" Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBlock Grid.Row="1">Mod Folders:</TextBlock>
+        <TextBlock Grid.Row="1" VerticalAlignment="Center">Mod Folders:</TextBlock>
 
-        <Expander Margin="0,12,0,0" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
-            <Grid Grid.Row="1" Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="45*"/>
-                    <ColumnDefinition Width="478*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-
-                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="2" >
-                    <Button Grid.Row="1" Command="{Binding AddFolder}">Add</Button>
-                    <Button Grid.Row="1" Command="{Binding RemoveFolder}">Remove</Button>
-                </StackPanel>
-                <ListBox Grid.Row="1" ItemsSource="{Binding Folders}" SelectedItem="{Binding CurrentFolder}" Grid.ColumnSpan="2" Margin="0,6,6,17">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Margin="0" Text="{Binding FolderPath}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
+        <Expander Margin="6,6" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
+            <ContentControl Content="{Binding Folders}" />
         </Expander>
 
-        <StackPanel Grid.Row="2">
-            <TextBlock >Mods to patch:</TextBlock>
-        </StackPanel>
+        <TextBlock Grid.Row="2" Margin="0,6">Mods to patch:</TextBlock>
 
-        <Grid Grid.Row="2" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <DockPanel>
-                <Button HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
-                <TextBlock Padding="6" Margin="0,12" >Select</TextBlock>
-                <Button Command="{Binding SelectAll}">All</Button>
-                <TextBlock Padding="6" Margin="0,12">|</TextBlock>
-                <Button Command="{Binding SelectNone}">None</Button>
+        <ContentControl Grid.Row="2" Grid.Column="1" Margin="6" Content="{Binding LoadOrder}" />
 
-                <Button Width="auto" HorizontalAlignment="Right" Command="{Binding SelectNone}">Save Load Order</Button>
-            </DockPanel>
-
-            <ScrollViewer Grid.Row="1" >
-                <v:DragItemsControl ItemsSource="{Binding Mods}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <CheckBox VerticalAlignment="Center" Margin="6,0" IsChecked="{Binding Selected}" />
-                                <TextBlock Text="{Binding Name}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </v:DragItemsControl>
-            </ScrollViewer>
-        </Grid>
-
-        <Button HorizontalAlignment="Right" Width="auto" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
+        <Button Margin="0,6,0,0" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
     </Grid>
 </Window>

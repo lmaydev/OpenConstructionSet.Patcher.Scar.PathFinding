@@ -75,10 +75,18 @@
     <Compile Include="PatchContext.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="ViewModel\BaseViewModel.cs" />
+    <Compile Include="ViewModel\FoldersViewModel.cs" />
+    <Compile Include="ViewModel\LoadOrderViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ModViewModel.cs" />
     <Compile Include="View\DragItemsControl.xaml.cs">
       <DependentUpon>DragItemsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\FoldersView.xaml.cs">
+      <DependentUpon>FoldersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\LoadOrderView.xaml.cs">
+      <DependentUpon>LoadOrderView.xaml</DependentUpon>
     </Compile>
     <Compile Include="WpfExtensions.cs" />
     <Page Include="MainWindow.xaml">
@@ -94,6 +102,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="View\DragItemsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\FoldersView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\LoadOrderView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -126,7 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenConstructionSet">
-      <Version>0.5.2</Version>
+      <Version>0.5.5</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
