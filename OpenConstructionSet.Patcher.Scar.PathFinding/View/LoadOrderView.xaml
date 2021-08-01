@@ -12,6 +12,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <DockPanel Margin="0,0,0,6">
@@ -28,10 +29,14 @@
             <v:DragItemsControl ItemsSource="{Binding Mods}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <CheckBox VerticalAlignment="Center" Margin="6,0" IsChecked="{Binding Selected}" />
-                            <TextBlock Cursor="ScrollNS" Text="{Binding Name}" />
-                        </StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <CheckBox VerticalAlignment="Center" IsChecked="{Binding Selected}">
+                                <CheckBox.LayoutTransform>
+                                    <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                                </CheckBox.LayoutTransform>
+                            </CheckBox>
+                            <TextBlock Margin="6,0" VerticalAlignment="Center" Text="{Binding Name}" Cursor="ScrollNS" />
+                        </DockPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </v:DragItemsControl>

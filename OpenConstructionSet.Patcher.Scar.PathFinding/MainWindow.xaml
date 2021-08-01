@@ -8,8 +8,8 @@
         xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
         xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="350" MinWidth="720" WindowState="Maximized"
-        Height="350" Width="720"
+        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="450" MinWidth="570" WindowState="Maximized"
+        Height="450" Width="570"
         FontSize="16"
         d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
     <Window.Resources>
@@ -37,14 +37,16 @@
 
         <TextBox Margin="6" Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBlock Grid.Row="1" VerticalAlignment="Center">Mod Folders:</TextBlock>
+        <TextBlock Margin="0,6" Grid.Row="1">Mod Folders:</TextBlock>
 
         <Expander Margin="6,6" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
             <ContentControl Content="{Binding Folders}" />
         </Expander>
 
-        <TextBlock Grid.Row="2" Margin="0,6">Mods to patch:</TextBlock>
-
+        <StackPanel Grid.Row="2">
+            <TextBlock Margin="0,0,0,24">Mods to patch:</TextBlock>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Width="120">Drag items to change load order.</TextBlock>
+        </StackPanel>
         <ContentControl Grid.Row="2" Grid.Column="1" Margin="6" Content="{Binding LoadOrder}" />
 
         <Button Margin="0,6,0,0" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
