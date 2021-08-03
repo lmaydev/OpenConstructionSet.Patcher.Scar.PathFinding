@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -43,8 +43,8 @@
     <Reference Include="forgotten construction set">
       <HintPath>$(KenshiFolder)forgotten construction set.exe</HintPath>
     </Reference>
-    <Reference Include="OpenConstructionSet, Version=0.5.1.0, Culture=neutral, processorArchitecture=x86">
-      <HintPath>packages\OpenConstructionSet.0.5.1\lib\net48\OpenConstructionSet.dll</HintPath>
+    <Reference Include="nlog">
+      <HintPath>$(KenshiFolder)nlog.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -70,10 +70,24 @@
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="Infrastructure\InverseBoolValueConverter.cs" />
+    <Compile Include="IPatcher.cs" />
+    <Compile Include="LoadOrder.cs" />
+    <Compile Include="PatchContext.cs" />
     <Compile Include="RelayCommand.cs" />
     <Compile Include="ViewModel\BaseViewModel.cs" />
+    <Compile Include="ViewModel\FoldersViewModel.cs" />
+    <Compile Include="ViewModel\LoadOrderViewModel.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ModViewModel.cs" />
+    <Compile Include="View\DragItemsControl.xaml.cs">
+      <DependentUpon>DragItemsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\FoldersView.xaml.cs">
+      <DependentUpon>FoldersView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="View\LoadOrderView.xaml.cs">
+      <DependentUpon>LoadOrderView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WpfExtensions.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -87,6 +101,18 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="View\DragItemsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\FoldersView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="View\LoadOrderView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -106,7 +132,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -115,7 +140,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Include="OpenConstructionSet">
+      <Version>0.5.5</Version>
+    </PackageReference>
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="OCS_logo_project_3.ico" />
   </ItemGroup>

@@ -5,18 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding"
         xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
+        xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
         xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" Height="600" Width="800"
+        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="450" MinWidth="570" WindowState="Maximized"
+        Height="450" Width="570"
         FontSize="16"
-        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=True}">
+        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
     <Window.Resources>
         <i:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
     </Window.Resources>
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
-    <Grid>
+    <Grid Margin="12" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Width="*" />
@@ -25,83 +27,28 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
-            <RowDefinition Height="3*" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid.Resources>
-            <Style TargetType="TextBox">
-                <Setter Property="Margin" Value="0,12,12,0" />
-            </Style>
-            <Style TargetType="ListBox">
-                <Setter Property="Margin" Value="0,12,12,0" />
-            </Style>
-            <Style TargetType="Button">
-                <Setter Property="Padding" Value="6,0" />
-            </Style>
-            <Style TargetType="TextBlock">
-                <Setter Property="Margin" Value="12,12,12,0" />
-                <Setter Property="TextAlignment" Value="Right" />
-            </Style>
         </Grid.Resources>
 
-        <StackPanel>
-            <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
-        </StackPanel>
+        <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
 
-        <TextBox Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBox Margin="6" Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
 
-        <TextBlock Grid.Row="1">Mod Folders:</TextBlock>
+        <TextBlock Margin="0,6" Grid.Row="1">Mod Folders:</TextBlock>
 
-        <Expander Margin="0,12,0,0" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
-            <Grid Grid.Row="1" Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-
-                <ListBox ItemsSource="{Binding Folders}" SelectedItem="{Binding CurrentFolder}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Margin="0" Text="{Binding FolderPath}" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <StackPanel Orientation="Horizontal" Grid.Row="1" >
-                    <Button Grid.Row="1" Margin="0,12,0,12" Command="{Binding AddFolder}">Add</Button>
-                    <Button Grid.Row="1" Margin="12,12,0,12" Command="{Binding RemoveFolder}">Remove</Button>
-                </StackPanel>
-            </Grid>
+        <Expander Margin="6,6" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
+            <ContentControl Content="{Binding Folders}" />
         </Expander>
 
         <StackPanel Grid.Row="2">
-            <TextBlock >Mods to patch:</TextBlock>
+            <TextBlock Margin="0,0,0,24">Mods to patch:</TextBlock>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Width="120">Drag items to change load order.</TextBlock>
         </StackPanel>
+        <ContentControl Grid.Row="2" Grid.Column="1" Margin="6" Content="{Binding LoadOrder}" />
 
-        <Grid Grid.Row="2" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <Button Margin="0,12,0,12" HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
-                <TextBlock>Select</TextBlock>
-                <Button Margin="0,12" Grid.Row="1" HorizontalAlignment="Right" Command="{Binding SelectAll}">All</Button>
-                <TextBlock>|</TextBlock>
-                <Button Margin="0,12" Command="{Binding SelectNone}">None</Button>
-            </StackPanel>
-
-            <ListBox Margin="0,0,12,0" Grid.Row="1" ItemsSource="{Binding Mods}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <CheckBox VerticalAlignment="Center" Margin="0,0,6,0" IsChecked="{Binding Selected}" />
-                            <TextBlock Text="{Binding Name}" />
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Grid>
-
-        <Button Margin="0,12,12,12" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
+        <Button Margin="0,6,0,0" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
     </Grid>
 </Window>
