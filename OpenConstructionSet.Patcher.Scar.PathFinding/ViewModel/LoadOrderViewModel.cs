@@ -79,7 +79,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
             LoadOrder.Save(mods);
 
-            MessageBox.Show("Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Application.Current.MainWindow, "Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

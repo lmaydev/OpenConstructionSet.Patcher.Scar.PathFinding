@@ -27,6 +27,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             Folders.Add(OcsHelper.LocalFolders.Data);
             Folders.Add(OcsHelper.LocalFolders.Mod);
 
+#if STEAM
             try
             {
                 if (OcsSteamHelper.TryFindContentFolder(out var contentFolder))
@@ -36,7 +37,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
             catch
             {
-            }
+            } 
+#endif
         }
 
         private void AddFolderExecute()

@@ -77,7 +77,12 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 data.save(modPath);
 
-                MessageBox.Show($"Mod created successfully", "Mod created!", MessageBoxButton.OK, MessageBoxImage.Information);
+                Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
+                    Application.Current.MainWindow,
+                    $"Mod created successfully",
+                    "Mod created!",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information));
 
                 string CreateNewMod()
                 {
@@ -94,7 +99,12 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to create mod with error message:{ex.Message}", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+                Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
+                    Application.Current.MainWindow,
+                    $"Failed to create mod with error message:{ex.Message}",
+                    "Error!",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error));
             }
             finally
             {
