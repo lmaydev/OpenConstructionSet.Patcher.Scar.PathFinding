@@ -1,21 +1,24 @@
-﻿using forgotten_construction_set;
+﻿using OpenConstructionSet.Data;
+using OpenConstructionSet.Models;
+using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
+using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Win32;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class MainViewModel : BaseViewModel
     {
+        private const string ModName = "OCSP - SCAR's pathfinding fix";
+        private const string ModFileName = ModName + ".mod";
+        private const string ReferenceModFileName = "SCAR's pathfinding fix.mod";
         private bool busy;
-
-        public string NewMod { get; set; }
+        private readonly IOcsDataContextBuilder builder;
+        private readonly IOcsIOService io;
+        private readonly ScarPathfindingFixPatcher patcher;
 
         public bool Busy
         {
@@ -27,26 +30,30 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        public FoldersViewModel Folders { get; }
-
         public LoadOrderViewModel LoadOrder { get; }
-        
+
         public RelayCommand CreateMod { get; }
 
-        public MainViewModel()
+        public InstallationSelectionViewModel InstallationSelection { get; }
+
+        public MainViewModel(IOcsDataContextBuilder builder,
+                             IOcsIOService io,
+                             InstallationSelectionViewModel installationSelection,
+                             LoadOrderViewModel loadOrder,
+                             ScarPathfindingFixPatcher patcher)
         {
-            CreateMod = new RelayCommand(_ => StartCreateMod(), _ => CanCreateMod());
+            this.builder = builder;
+            this.io = io;
+            InstallationSelection = installationSelection;
 
-            Folders = new FoldersViewModel();
+            LoadOrder = loadOrder;
 
-            LoadOrder = new LoadOrderViewModel(Folders.Folders);
+            this.patcher = patcher;
 
-            Folders.Folders.CollectionChanged += (_, __) => LoadOrder.RefreshExecute();
-
-            NewMod = "Compatibility SCAR's pathfinding fix";
+            CreateMod = new RelayCommand(StartCreateMod, CanCreateMod);
         }
 
-        private bool CanCreateMod() => !Busy && !string.IsNullOrWhiteSpace(NewMod) && LoadOrder.Mods.Any(m => m.Selected) && FileHelper.IsValidPath(NewMod);
+        private bool CanCreateMod() => !Busy && LoadOrder.Mods.Any(m => m.Selected);
 
         private void StartCreateMod()
         {
@@ -59,23 +66,38 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         {
             try
             {
-                var mods = LoadOrder.Mods.Where(m => m.Selected).ToList();
+                var mods = LoadOrder.Mods.Where(m => m.Selected && m.Name != ReferenceModFileName && m.Name != ModFileName).Select(m => m.Path).ToList();
 
-                Folders.Folders.ForEach(f => f.Populate());
-
-                var modPath = CreateNewMod();
-
-                var data = OcsHelper.Load(mods.Select(m => m.Path), NewMod, Folders.Folders, resolveDependencies: false);
-
-                var context = new PatchContext(data)
+                if (!mods.Any())
                 {
-                    Folders = Folders.Folders.ToArray(),
-                    Mods = mods.ToDictionary(m => m.Name, m => m.Path),
-                };
+                    throw new Exception("No mods selected to patch");
+                }
 
-                new ScarPathfindingFixPatcher().Patch(context);
+                var installation = InstallationSelection.SelectedInstallation.Installation;
 
-                data.save(modPath);
+                var header = new Header(1, "LMayDev", "OpenConstructionSet compatibility patch to apply core values from SCAR's pathfinding fix to custom races");
+                header.References.Add(ReferenceModFileName);
+                header.Dependencies.AddRange(mods.Select(m => Path.GetFileName(m)));
+
+                var options = new OcsDataContexOptions(ModName,
+                                                       ThrowIfMissing: false,
+                                                       Installation: installation,
+                                                       Header: header,
+                                                       BaseMods: mods,
+                                                       LoadGameFiles: Models.ModLoadType.Base);
+
+                var context = builder.Build(options);
+
+                patcher.Patch(installation, context);
+
+                context.Save();
+
+                if (!installation.EnabledMods.Contains(ModFileName))
+                {
+                    installation.EnabledMods.Add(ModFileName);
+
+                    io.Write(installation.EnabledModsFile(), installation.EnabledMods);
+                }
 
                 Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
                     Application.Current.MainWindow,
@@ -83,31 +105,20 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                     "Mod created!",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information));
-
-                string CreateNewMod()
-                {
-                    var modNames = mods.Select(m => m.Name).ToList();
-
-                    var header = new GameData.Header
-                    {
-                        Dependencies = modNames,
-                        Referenced = new List<string>(),
-                    };
-
-                    return OcsHelper.NewMod(header, NewMod);
-                }
             }
             catch (Exception ex)
             {
                 Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
                     Application.Current.MainWindow,
-                    $"Failed to create mod with error message:{ex.Message}",
+                    $"Failed to create mod:{Environment.NewLine}{ex.Message}",
                     "Error!",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error));
             }
             finally
             {
+                Application.Current.Dispatcher.Invoke(() => Messenger<Refresh>.Send(new()));
+
                 Busy = false;
             }
         }

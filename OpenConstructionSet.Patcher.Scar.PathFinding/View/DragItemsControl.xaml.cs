@@ -1,8 +1,10 @@
-﻿using System;
+﻿using OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,7 +15,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
     /// <summary>
     /// Interaction logic for DragItemsControl.xaml
     /// </summary>
-    public partial class DragItemsControl : ItemsControl
+    public partial class DragItemsControl : HeaderedItemsControl
     {
         const int DropDelay = 200;
 
@@ -36,14 +38,25 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
                 return;
             }
 
-            var data = (Mouse.DirectlyOver as FrameworkElement)?.DataContext;
+            var dc = (Mouse.DirectlyOver as FrameworkElement)!;
 
-            if (data == null)
+            if (!TryGetData(dc, out var data))
             {
                 return;
             }
 
-            DragDrop.DoDragDrop(control, data, DragDropEffects.Move);
+            DragDrop.DoDragDrop(control, new DataObject(data), DragDropEffects.Move);
+        }
+
+        private bool TryGetData(FrameworkElement? element, [MaybeNullWhen(false)] out ModViewModel data)
+        {
+            var template = element?.TemplatedParent as FrameworkElement;
+
+            var parent = template?.Parent as FrameworkElement;
+
+            data = parent?.DataContext as ModViewModel;
+
+            return data is not null;
         }
 
         private void ItemsControl_Drop(object sender, DragEventArgs e)
@@ -56,7 +69,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
 
             lastDrop = Environment.TickCount;
 
-            if (!(sender is ItemsControl ic))
+            if (sender is not ItemsControl ic)
             {
                 return;
             }
@@ -65,9 +78,12 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
 
             var dragItem = e.Data.GetData(GetDataFormat());
 
-            var dropItem = (VisualTreeHelper.HitTest(ic, point).VisualHit as FrameworkElement)?.DataContext;
+            if (!TryGetData(VisualTreeHelper.HitTest(ic, point).VisualHit as FrameworkElement, out var dropItem))
+            {
+                return;
+            }
 
-            IList list = ic.ItemsSource as IList;
+            IList list = (IList)ic.ItemsSource;
 
             if (list == null || dropItem == null || dragItem == null || !IsObservableCollection(list.GetType()))
             {
@@ -99,13 +115,13 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
             }
         }
 
-        private string GetDataFormat()
+        private string? GetDataFormat()
         {
             var itemType = ItemsSource.GetType();
 
             if (IsGenericList(itemType))
             {
-                var type = itemType.GenericTypeArguments[0];
+                Type type = itemType.GenericTypeArguments[0];
 
                 if (type == typeof(string))
                 {

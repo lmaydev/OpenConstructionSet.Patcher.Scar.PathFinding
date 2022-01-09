@@ -4,51 +4,21 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding"
-        xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
         xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
-        xmlns:i="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
+        xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
         mc:Ignorable="d"
-        Title="OCS Content Patcher - SCAR's Pathfinding Fix" MinHeight="450" MinWidth="570" WindowState="Maximized"
-        Height="450" Width="570"
-        FontSize="16"
-        d:DataContext="{d:DesignInstance vm:MainViewModel, IsDesignTimeCreatable=False}">
+        d:DataContext="{Binding MainViewModel, Source={StaticResource DesignServiceLocator}}"
+        DataContext="{Binding MainViewModel, Source={StaticResource ServiceLocator}}"
+        Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
-        <i:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
     </Window.Resources>
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
-    <Grid Margin="12" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <Grid.Resources>
-        </Grid.Resources>
-
-        <TextBlock VerticalAlignment="Center">Output mod name:</TextBlock>
-
-        <TextBox Margin="6" Grid.Column="1" VerticalAlignment="Center" Text="{Binding NewMod, UpdateSourceTrigger=PropertyChanged}" />
-
-        <TextBlock Margin="0,6" Grid.Row="1">Mod Folders:</TextBlock>
-
-        <Expander Margin="6,6" VerticalAlignment="Center" Grid.Row="1" Grid.Column="1" Header="Configure Mod Folders (Advanced Users)">
-            <ContentControl Content="{Binding Folders}" />
-        </Expander>
-
-        <StackPanel Grid.Row="2">
-            <TextBlock Margin="0,0,0,24">Mods to patch:</TextBlock>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Width="120">Drag items to change load order.</TextBlock>
-        </StackPanel>
-        <ContentControl Grid.Row="2" Grid.Column="1" Margin="6" Content="{Binding LoadOrder}" />
-
-        <Button Margin="0,6,0,0" HorizontalAlignment="Right" Grid.Row="3" Command="{Binding CreateMod}" Grid.Column="2">Create Mod</Button>
+        <ContentControl Content="{Binding InstallationSelection}" Margin="12" />
+        <ContentControl Content="{Binding LoadOrder}" Grid.Row="1" />
+        <Button Command="{Binding CreateMod}" Margin="12" Width="120" Height="32" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Content="Create" />
     </Grid>
 </Window>

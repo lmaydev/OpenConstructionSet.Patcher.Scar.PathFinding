@@ -5,41 +5,73 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
              xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
-             xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             d:DataContext="{d:DesignInstance vm:LoadOrderViewModel}">
+             d:DesignHeight="400" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance Type=vm:DesignLoadOrderViewModel, IsDesignTimeCreatable=True}">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <DockPanel Margin="0,0,0,6">
-            <Button HorizontalAlignment="Right" Command="{Binding RefreshMods}">Refresh</Button>
-            <TextBlock Margin="24,0,12,0" VerticalAlignment="Center">Select</TextBlock>
-            <Button Command="{Binding SelectAll}">All</Button>
-            <TextBlock Margin="6,0" VerticalAlignment="Center">|</TextBlock>
-            <Button Command="{Binding SelectNone}">None</Button>
+        <local:DragItemsControl x:Name="mouse" ItemsSource="{Binding Mods}">
+            <HeaderedItemsControl.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox VerticalAlignment="Center" Margin="12,6" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=IsChecked}" Command="{Binding Select}" />
+                    <Label VerticalAlignment="Center" Content="Use the arrows or drag items to change the load order" Grid.Column="1"/>
+                    <Button BorderThickness="0" Background="Transparent" Command="{Binding Refresh}" Grid.Column="3" Margin="0,0,12,0">
+                        <Image Width="32" Source="/refresh.png" />
+                    </Button>
+                    <Button BorderThickness="0" Background="Transparent" Command="{Binding SaveLoadOrder}" Grid.Column="4" Margin="0,0,12,0">
+                        <Image Width="32" Source="/save.png" />
+                    </Button>
+                </Grid>
+            </HeaderedItemsControl.Header>
+            <HeaderedItemsControl.Template>
+                <ControlTemplate TargetType="{x:Type HeaderedItemsControl}">
+                    <Border>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <ContentPresenter ContentSource="Header" />
+                            <Separator Grid.Row="1" />
+                            <ItemsPresenter Grid.Row="2" />
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </HeaderedItemsControl.Template>
+            <HeaderedItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel LastChildFill="True">
+                        <CheckBox IsChecked="{Binding Selected}" Margin="12" />
 
-            <Button HorizontalAlignment="Right" Command="{Binding SaveLoadOrder}">Save Load Order</Button>
-        </DockPanel>
+                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}" 
+                                Command="{Binding Path=DataContext.MoveUp, RelativeSource={RelativeSource AncestorType={x:Type local:LoadOrderView}}}">
+                            <Image Width="16" Source="/arrow.png">
+                                <Image.LayoutTransform>
+                                    <RotateTransform Angle="90" />
+                                </Image.LayoutTransform>
+                            </Image>
+                        </Button>
+                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}" 
+                                Command="{Binding Path=DataContext.MoveDown, RelativeSource={RelativeSource AncestorType={x:Type local:LoadOrderView}}}">
+                            <Image Width="16" Source="/arrow.png">
+                                <Image.LayoutTransform>
+                                    <RotateTransform Angle="-90" />
+                                </Image.LayoutTransform>
+                            </Image>
+                        </Button>
 
-        <ScrollViewer Grid.Row="2">
-            <v:DragItemsControl ItemsSource="{Binding Mods}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel LastChildFill="True">
-                            <CheckBox VerticalAlignment="Center" IsChecked="{Binding Selected}">
-                                <CheckBox.LayoutTransform>
-                                    <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                                </CheckBox.LayoutTransform>
-                            </CheckBox>
-                            <TextBlock Margin="6,0" VerticalAlignment="Center" Text="{Binding Name}" Cursor="ScrollNS" />
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </v:DragItemsControl>
-        </ScrollViewer>
+                        <Label VerticalContentAlignment="Center" Content="{Binding Name}" Cursor="ScrollNS" />
+
+                    </DockPanel>
+                </DataTemplate>
+            </HeaderedItemsControl.ItemTemplate>
+        </local:DragItemsControl>
     </Grid>
 </UserControl>

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows7</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+	  <WarningsAsErrors>nullable</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="arrow.png" />
+    <None Remove="refresh.png" />
+    <None Remove="save.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoFixture" Version="4.17.0" />
+    <PackageReference Include="AutoFixture.AutoNSubstitute" Version="4.17.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="OpenConstructionSet" Version="2.2.0" />
+    <PackageReference Include="openconstructionset.dependencyinjection" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="arrow.png" />
+    <Resource Include="refresh.png" />
+    <Resource Include="save.png" />
+  </ItemGroup>
+
+</Project>

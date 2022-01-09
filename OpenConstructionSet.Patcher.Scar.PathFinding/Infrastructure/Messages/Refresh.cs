@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
+namespace OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages
 {
-    class ModLoadOrderViewModel
+    internal struct Refresh
     {
     }
 }

@@ -6,15 +6,19 @@
              xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <DataTemplate DataType="{x:Type vm:FoldersViewModel}">
-            <v:FoldersView />
+        <vm:ServiceLocatorViewModel x:Key="ServiceLocator"/>
+        <vm:DesignServiceLocatorViewModel x:Key="DesignServiceLocator"/>
+
+        <DataTemplate DataType="{x:Type vm:InstallationViewModel}">
+            <v:InstallationView/>
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:InstallationSelectionViewModel}">
+            <v:InstallationSelectionView/>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:LoadOrderViewModel}">
             <v:LoadOrderView />
         </DataTemplate>
-
-        <Style TargetType="Button">
-            <Setter Property="Padding" Value="6,6" />
-        </Style>
     </Application.Resources>
 </Application>

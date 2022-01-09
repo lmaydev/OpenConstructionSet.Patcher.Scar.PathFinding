@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.View
 {
     /// <summary>
-    /// Interaction logic for FoldersView.xaml
+    /// Interaction logic for InstallationSelectionView.xaml
     /// </summary>
-    public partial class FoldersView : UserControl
+    public partial class InstallationSelectionView : UserControl
     {
-        public FoldersView()
+        public InstallationSelectionView()
         {
             InitializeComponent();
         }
