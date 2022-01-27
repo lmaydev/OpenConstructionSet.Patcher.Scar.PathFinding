@@ -1,26 +1,26 @@
 ﻿<UserControl x:Class="OpenConstructionSet.Patcher.Scar.PathFinding.View.LoadOrderView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
              xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="800"
-             d:DataContext="{d:DesignInstance Type=vm:DesignLoadOrderViewModel, IsDesignTimeCreatable=True}">
+             d:DataContext="{d:DesignInstance Type=vm:LoadOrderViewModel, IsDesignTimeCreatable=False}">
     <Grid>
         <local:DragItemsControl x:Name="mouse" ItemsSource="{Binding Mods}">
             <HeaderedItemsControl.Header>
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
                     <CheckBox VerticalAlignment="Center" Margin="12,6" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=IsChecked}" Command="{Binding Select}" />
-                    <Label VerticalAlignment="Center" Content="Use the arrows or drag items to change the load order" Grid.Column="1"/>
+                    <Label VerticalAlignment="Center" Content="Use the arrows or drag items to change the load order" Grid.Column="1" />
                     <Button BorderThickness="0" Background="Transparent" Command="{Binding Refresh}" Grid.Column="3" Margin="0,0,12,0">
                         <Image Width="32" Source="/refresh.png" />
                     </Button>
@@ -50,7 +50,7 @@
                     <DockPanel LastChildFill="True">
                         <CheckBox IsChecked="{Binding Selected}" Margin="12" />
 
-                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}" 
+                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}"
                                 Command="{Binding Path=DataContext.MoveUp, RelativeSource={RelativeSource AncestorType={x:Type local:LoadOrderView}}}">
                             <Image Width="16" Source="/arrow.png">
                                 <Image.LayoutTransform>
@@ -58,7 +58,7 @@
                                 </Image.LayoutTransform>
                             </Image>
                         </Button>
-                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}" 
+                        <Button BorderThickness="0" Background="Transparent" CommandParameter="{Binding}"
                                 Command="{Binding Path=DataContext.MoveDown, RelativeSource={RelativeSource AncestorType={x:Type local:LoadOrderView}}}">
                             <Image Width="16" Source="/arrow.png">
                                 <Image.LayoutTransform>
@@ -68,7 +68,6 @@
                         </Button>
 
                         <Label VerticalContentAlignment="Center" Content="{Binding Name}" Cursor="ScrollNS" />
-
                     </DockPanel>
                 </DataTemplate>
             </HeaderedItemsControl.ItemTemplate>

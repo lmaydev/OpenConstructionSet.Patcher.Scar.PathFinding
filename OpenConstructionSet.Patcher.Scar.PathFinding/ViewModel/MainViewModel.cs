@@ -1,4 +1,5 @@
-﻿using OpenConstructionSet.Data;
+﻿using Microsoft.Toolkit.Mvvm.Input;
+using OpenConstructionSet.Data;
 using OpenConstructionSet.Models;
 using OpenConstructionSet.Models.Enums;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
@@ -33,7 +34,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
             this.patcher = patcher;
 
-            CreateMod = new RelayCommand(StartCreateMod, CanCreateMod);
+            CreateMod = new AsyncRelayCommand(CreateModExecuteAsync);
+
+            Messenger<Infrastructure.Messages.MessageBox>.MessageRecieved += MessageRecieved;
         }
 
         public bool Busy
@@ -46,17 +49,21 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        public RelayCommand CreateMod { get; }
+        public AsyncRelayCommand CreateMod { get; }
+
         public InstallationSelectionViewModel InstallationSelection { get; }
+
         public LoadOrderViewModel LoadOrder { get; }
 
-        private bool CanCreateMod() => !Busy && LoadOrder.Mods.Any(m => m.Selected);
-
-        private void CreateModExecute()
+        private async Task CreateModExecuteAsync()
         {
+            Busy = true;
+
             try
             {
-                var mods = LoadOrder.Mods.Where(m => m.Selected && m.Name != ReferenceModFileName && m.Name != ModFileName).Select(m => m.Path).ToList();
+                var mods = LoadOrder.Mods.Where(m => m.Selected && m.Name != ReferenceModFileName && m.Name != ModFileName)
+                                         .Select(m => m.Path)
+                                         .ToList();
 
                 if (mods.Count == 0)
                 {
@@ -76,54 +83,42 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                                                        BaseMods: mods,
                                                        LoadGameFiles: ModLoadType.Base);
 
-                var context = builder.BuildAsync(options).GetAwaiter().GetResult();
+                var context = await builder.BuildAsync(options);
 
-                patcher.PatchAsync(installation, context).GetAwaiter().GetResult();
+                await patcher.PatchAsync(installation, context);
 
-                context.SaveAsync().GetAwaiter().GetResult();
+                await context.SaveAsync();
 
-                var loadOrder = installationService.LoadEnabledModsAsync(installation)
-                                                   .GetAwaiter()
-                                                   .GetResult()
-                                                   .ToList();
+                var loadOrder = (await installationService.LoadEnabledModsAsync(installation)).ToList();
 
                 loadOrder.RemoveAll(s => s.Equals(ModFileName, StringComparison.OrdinalIgnoreCase));
 
                 loadOrder.Add(ModFileName);
 
-                installationService.SaveEnabledModsAsync(installation, loadOrder)
-                                   .GetAwaiter()
-                                   .GetResult();
+                await installationService.SaveEnabledModsAsync(installation, loadOrder);
 
-                Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
-                    Application.Current.MainWindow,
-                    "Mod created successfully",
-                    "Mod created!",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information));
+                Messenger<Infrastructure.Messages.MessageBox>.Send(new("Mod created successfully", "Mod created!", MessageBoxImage.Information));
+
+                Messenger<Refresh>.Send(new());
             }
             catch (Exception ex)
             {
-                Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
-                    Application.Current.MainWindow,
-                    $"Failed to create mod:{Environment.NewLine}{ex.Message}",
-                    "Error!",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error));
+                Messenger<Infrastructure.Messages.MessageBox>.Send(new($"Failed to create mod:{Environment.NewLine}{ex.Message}", "Error!", MessageBoxImage.Error));
             }
             finally
             {
-                Application.Current.Dispatcher.Invoke(() => Messenger<Refresh>.Send(new()));
-
                 Busy = false;
             }
         }
 
-        private void StartCreateMod()
+        private void MessageRecieved(Infrastructure.Messages.MessageBox message)
         {
-            Busy = true;
-
-            Task.Run(CreateModExecute);
+            Application.Current.Dispatcher.Invoke(() => System.Windows.MessageBox.Show(
+                   Application.Current.MainWindow,
+                   message.Message,
+                   message.Title,
+                   message.Button,
+                   message.Image));
         }
     }
 }

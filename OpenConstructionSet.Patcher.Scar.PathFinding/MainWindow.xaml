@@ -3,10 +3,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:infra="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
         DataContext="{Binding MainViewModel, Source={StaticResource ServiceLocator}}"
         Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
+        <infra:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -15,6 +17,6 @@
         </Grid.RowDefinitions>
         <ContentControl Content="{Binding InstallationSelection}" Margin="12" />
         <ContentControl Content="{Binding LoadOrder}" Grid.Row="1" />
-        <Button Command="{Binding CreateMod}" Margin="12" Width="120" Height="32" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Content="Create" />
+        <Button Command="{Binding CreateMod}" IsEnabled="{Binding Busy, Converter={StaticResource InverseBoolValueConverter}}" Margin="12" Width="120" Height="32" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="1" Content="Create" />
     </Grid>
 </Window>

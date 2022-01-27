@@ -1,4 +1,5 @@
-﻿using OpenConstructionSet.Models;
+﻿using Microsoft.Toolkit.Mvvm.Input;
+using OpenConstructionSet.Models;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
 using System.Collections.ObjectModel;
@@ -10,8 +11,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
     {
         private readonly IOcsInstallationService installationService;
 
-        private readonly IOcsModService modService
-                    ;
+        private readonly IOcsModService modService;
 
         private InstallationInfo installation;
         private int selectedModIndex;
@@ -19,32 +19,34 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         public LoadOrderViewModel(IOcsModService modService, IOcsInstallationService installationService, InstallationSelectionViewModel installationsViewModel)
         {
             Messenger<InstallationInfo>.MessageRecieved += InstallationChanged;
-            Messenger<Refresh>.MessageRecieved += _ => RefreshExecute();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Messenger<Refresh>.MessageRecieved += _ => RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             installation = installationsViewModel.SelectedInstallation;
 
             this.modService = modService;
             this.installationService = installationService;
 
-            Refresh = new RelayCommand(RefreshExecute);
+            Refresh = new AsyncRelayCommand(RefreshExecuteAsync);
+            SaveLoadOrder = new AsyncRelayCommand(SaveLoadOrderExecuteAsync);
 
             Select = new RelayCommand<bool>(SelectExecute);
-
-            SaveLoadOrder = new RelayCommand(SaveLoadOrderExecute);
 
             MoveUp = new RelayCommand<ModViewModel>(MoveUpExecute);
 
             MoveDown = new RelayCommand<ModViewModel>(MoveDownExecute);
 
-            RefreshMods();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
         public RelayCommand<ModViewModel> MoveDown { get; }
         public RelayCommand<ModViewModel> MoveUp { get; }
-        public RelayCommand Refresh { get; }
-
-        public RelayCommand SaveLoadOrder { get; }
+        public AsyncRelayCommand Refresh { get; }
+        public AsyncRelayCommand SaveLoadOrder { get; }
         public RelayCommand<bool> Select { get; }
 
         public int SelectedModIndex
@@ -62,7 +64,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
         {
             this.installation = installation;
 
-            RefreshMods();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         private void MoveDownExecute(ModViewModel? mod)
@@ -93,21 +97,11 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             Mods.Move(index, newIndex);
         }
 
-        private void RefreshExecute()
+        private async Task RefreshExecuteAsync()
         {
-            RefreshMods();
-        }
+            var mods = await modService.FindAllAsync(installation).ToDictionaryAsync(m => m.Filename);
 
-        private void RefreshMods()
-        {
-            var mods = modService.FindAllAsync(installation)
-                                 .ToArrayAsync()
-                                 .AsTask()
-                                 .GetAwaiter()
-                                 .GetResult()
-                                 .ToDictionary(m => m.Filename);
-
-            var loadOrder = installationService.LoadEnabledModsAsync(installation).GetAwaiter().GetResult();
+            var loadOrder = await installationService.LoadEnabledModsAsync(installation);
 
             Mods.Clear();
 
@@ -120,13 +114,13 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             mods.ForEach(p => Mods.Add(new ModViewModel(p.Key, p.Value.Path, false)));
         }
 
-        private void SaveLoadOrderExecute()
+        private async Task SaveLoadOrderExecuteAsync()
         {
             var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
 
-            installationService.SaveEnabledModsAsync(installation, mods).GetAwaiter().GetResult();
+            await installationService.SaveEnabledModsAsync(installation, mods);
 
-            MessageBox.Show(Application.Current.MainWindow, "Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
+            Messenger<Infrastructure.Messages.MessageBox>.Send(new("Load order saved", "Saved!", MessageBoxImage.Information));
         }
 
         private void SelectExecute(bool select)

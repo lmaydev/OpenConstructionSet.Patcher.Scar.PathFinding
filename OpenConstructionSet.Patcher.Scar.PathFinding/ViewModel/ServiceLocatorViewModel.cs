@@ -4,7 +4,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class ServiceLocatorViewModel
     {
-        public ServiceLocatorViewModel() => 
+        public ServiceLocatorViewModel() =>
             MainViewModel = new ServiceCollection().AddOpenContructionSet()
                                                    .AddSingleton<InstallationSelectionViewModel>()
                                                    .AddSingleton<LoadOrderViewModel>()
@@ -13,6 +13,6 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                                                    .BuildServiceProvider()
                                                    .GetRequiredService<MainViewModel>();
 
-        public MainViewModel MainViewModel { get; private set; }
+        public MainViewModel MainViewModel { get; }
     }
 }
