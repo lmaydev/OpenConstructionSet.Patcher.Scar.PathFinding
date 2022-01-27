@@ -1,50 +1,30 @@
 ﻿using OpenConstructionSet.Models;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class LoadOrderViewModel : BaseViewModel
     {
-        private InstallationViewModel installation;
+        private readonly IOcsInstallationService installationService;
+
+        private readonly IOcsModService modService
+                    ;
+
+        private InstallationInfo installation;
         private int selectedModIndex;
-        private readonly IOcsIOService io;
 
-        public RelayCommand Refresh { get; }
-
-        public RelayCommand<bool> Select { get; }
-
-        public RelayCommand SaveLoadOrder { get; }
-
-        public RelayCommand<ModViewModel> MoveUp { get; }
-
-        public RelayCommand<ModViewModel> MoveDown { get; }
-
-        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
-
-        public int SelectedModIndex
+        public LoadOrderViewModel(IOcsModService modService, IOcsInstallationService installationService, InstallationSelectionViewModel installationsViewModel)
         {
-            get => selectedModIndex;
-
-            set
-            {
-                selectedModIndex = value;
-                OnPropertyChanged(nameof(SelectedModIndex));
-            }
-        }
-
-        public LoadOrderViewModel(IOcsIOService io, InstallationSelectionViewModel installationsViewModel)
-        {
-            Messenger<InstallationViewModel>.MessageRecieved += InstallationChanged;
+            Messenger<InstallationInfo>.MessageRecieved += InstallationChanged;
+            Messenger<Refresh>.MessageRecieved += _ => RefreshExecute();
 
             installation = installationsViewModel.SelectedInstallation;
 
-            this.io = io;
+            this.modService = modService;
+            this.installationService = installationService;
 
             Refresh = new RelayCommand(RefreshExecute);
 
@@ -59,18 +39,30 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             RefreshMods();
         }
 
-        private void MoveUpExecute(ModViewModel? mod)
+        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
+        public RelayCommand<ModViewModel> MoveDown { get; }
+        public RelayCommand<ModViewModel> MoveUp { get; }
+        public RelayCommand Refresh { get; }
+
+        public RelayCommand SaveLoadOrder { get; }
+        public RelayCommand<bool> Select { get; }
+
+        public int SelectedModIndex
         {
-            if (mod is null)
+            get => selectedModIndex;
+
+            set
             {
-                return;
+                selectedModIndex = value;
+                OnPropertyChanged(nameof(SelectedModIndex));
             }
+        }
 
-            var index = Mods.IndexOf(mod);
+        private void InstallationChanged(InstallationInfo installation)
+        {
+            this.installation = installation;
 
-            var newIndex = Mods.IndexOf(mod) > 0 ? index - 1 : Mods.Count - 1;
-
-            Mods.Move(index, newIndex);
+            RefreshMods();
         }
 
         private void MoveDownExecute(ModViewModel? mod)
@@ -87,59 +79,59 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             Mods.Move(index, newIndex);
         }
 
-        private void InstallationChanged(InstallationViewModel installation)
+        private void MoveUpExecute(ModViewModel? mod)
         {
-            this.installation = installation;
+            if (mod is null)
+            {
+                return;
+            }
 
-            RefreshMods();
-        }
+            var index = Mods.IndexOf(mod);
 
-        private void SelectExecute(bool select)
-        {
-            Mods.ForEach(m => m.Selected = select);
+            var newIndex = Mods.IndexOf(mod) > 0 ? index - 1 : Mods.Count - 1;
+
+            Mods.Move(index, newIndex);
         }
 
         private void RefreshExecute()
         {
-            Messenger<Refresh>.Send(new());
-
             RefreshMods();
         }
 
         private void RefreshMods()
         {
-            var folders = new List<ModFolder>
-            {
-                installation.Installation.Mod
-            };
+            var mods = modService.FindAllAsync(installation)
+                                 .ToArrayAsync()
+                                 .AsTask()
+                                 .GetAwaiter()
+                                 .GetResult()
+                                 .ToDictionary(m => m.Filename);
 
-            if (installation.Installation.Content is not null)
-            {
-                folders.Add(installation.Installation.Content);
-            }
-
-            var mods = new Dictionary<string, ModFile>(folders.SelectMany(f => f.Mods)
-                                                              .Where(p => !OcsConstants.BaseMods.Contains(p.Key))
-                                                              .DistinctBy(p => p.Key));
+            var loadOrder = installationService.LoadEnabledModsAsync(installation).GetAwaiter().GetResult();
 
             Mods.Clear();
 
-            foreach (var loadOrderItem in installation.Installation.EnabledMods.Where(i => mods.ContainsKey(i)))
+            foreach (var loadOrderItem in loadOrder.Where(i => mods.ContainsKey(i)))
             {
-                Mods.Add(new ModViewModel(loadOrderItem, mods[loadOrderItem].FullName, true));
+                Mods.Add(new ModViewModel(loadOrderItem, mods[loadOrderItem].Path, true));
                 mods.Remove(loadOrderItem);
             }
 
-            mods.ForEach(p => Mods.Add(new ModViewModel(p.Key, p.Value.FullName, false)));
+            mods.ForEach(p => Mods.Add(new ModViewModel(p.Key, p.Value.Path, false)));
         }
 
         private void SaveLoadOrderExecute()
         {
             var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
 
-            io.Write(installation.Installation.EnabledModsFile(), mods);
+            installationService.SaveEnabledModsAsync(installation, mods).GetAwaiter().GetResult();
 
             MessageBox.Show(Application.Current.MainWindow, "Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void SelectExecute(bool select)
+        {
+            Mods.ForEach(m => m.Selected = select);
         }
     }
 }

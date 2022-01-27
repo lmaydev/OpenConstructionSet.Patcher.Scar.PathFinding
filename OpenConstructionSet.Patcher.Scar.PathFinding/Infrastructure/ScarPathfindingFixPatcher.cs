@@ -1,33 +1,30 @@
 ﻿using OpenConstructionSet.Data;
-using OpenConstructionSet.Data.Models;
 using OpenConstructionSet.Models;
-using System;
-using System.Linq;
-using System.Windows;
+using OpenConstructionSet.Models.Enums;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class ScarPathfindingFixPatcher
     {
-        private readonly IOcsIOService io;
+        private readonly IOcsModService modService;
 
-        public ScarPathfindingFixPatcher(IOcsIOService io)
+        public ScarPathfindingFixPatcher(IOcsModService modService)
         {
-            this.io = io;
+            this.modService = modService;
         }
 
-        public void Patch(Installation installation, OcsDataContext context)
+        public async Task PatchAsync(InstallationInfo installation, OcsDataContext context)
         {
-            if (!installation.Mod.Mods.TryGetValue("SCAR's pathfinding fix.mod", out var referneceMod))
-            {
+            var referenceMod = await modService.FindAsync(installation, "SCAR's pathfinding fix.mod") ??
                 throw new Exception("Could not find SCAR's pathfinding fix.mod");
-            }
 
-            var referenceData = io.ReadDataFile(referneceMod.FullName) ?? throw new Exception("Failed to read SCAR's pathfinding fix.mod");
+            var referenceData = await modService.ReadFileAsync(referenceMod.Path);
 
-            context.Header.Version = referenceData.Header!.Version;
+            context.Header.Version = referenceData.Header.Version;
 
-            var greenlander = referenceData.Items.Find(i => i.StringId == "17-gamedata.quack")!;
+            var greenlander = referenceData.Items.Find(i => i.Name.Equals("Greenlander", StringComparison.OrdinalIgnoreCase)) ??
+                throw new Exception("Failed to load Greenlander item");
+
             var pathfindAcceleration = greenlander.Values["pathfind acceleration"];
             var waterAvoidance = greenlander.Values["water avoidance"];
 
@@ -43,7 +40,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                 }
             }
 
-            bool IsNotAnimal(DataItem race) => race.Values.TryGetValue("editor limits", out var value)
+            static bool IsNotAnimal(DataItem race) => race.Values.TryGetValue("editor limits", out var value)
                                                && value is FileValue file
                                                && !string.IsNullOrEmpty(file.Path);
         }

@@ -1,18 +1,30 @@
-﻿using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
-using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
-using System;
-using System.Linq;
+﻿using OpenConstructionSet.Models;
+using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     public class InstallationSelectionViewModel : BaseViewModel
     {
-        private InstallationViewModel selectedInstallation;
+        private InstallationInfo[] installations;
+        private InstallationInfo selectedInstallation;
 
-        private InstallationViewModel[] installations;
-        private readonly IOcsDiscoveryService discovery;
+        public InstallationSelectionViewModel(IOcsInstallationService installationService)
+        {
+            installations = installationService.LocateAllAsync()
+                                               .ToArrayAsync()
+                                               .AsTask()
+                                               .GetAwaiter()
+                                               .GetResult();
 
-        public InstallationViewModel[] Installations
+            if (Installations.Length == 0)
+            {
+                throw new Exception("Could not locate any installations");
+            }
+
+            selectedInstallation = Installations[0];
+        }
+
+        public InstallationInfo[] Installations
         {
             get => installations;
 
@@ -24,7 +36,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        public InstallationViewModel SelectedInstallation
+        public InstallationInfo SelectedInstallation
         {
             get => selectedInstallation;
 
@@ -36,38 +48,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 if (value is not null)
                 {
-                    Messenger<InstallationViewModel>.Send(value);
+                    Messenger<InstallationInfo>.Send(value);
                 }
             }
-        }
-
-        public InstallationSelectionViewModel(IOcsDiscoveryService discovery)
-        {
-            installations = discovery.DiscoverAllInstallations().Select(p => new InstallationViewModel(p)).ToArray();
-
-            if (Installations.Length == 0)
-            {
-                throw new Exception("Could not locate any installations");
-            }
-
-            selectedInstallation = Installations[0];
-
-            Messenger<Refresh>.MessageRecieved += MessageRecieved;
-            this.discovery = discovery;
-        }
-
-        private void MessageRecieved(Refresh obj)
-        {
-            var currentName = selectedInstallation.Name;
-
-            Installations = discovery.DiscoverAllInstallations().Select(p => new InstallationViewModel(p)).ToArray();
-
-            if (Installations.Length == 0)
-            {
-                throw new Exception("Could not locate any installations");
-            }
-
-            SelectedInstallation = Installations.FirstOrDefault(i => i.Name == currentName) ?? Installations[0];
         }
     }
 }

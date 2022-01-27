@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows7</TargetFramework>
     <Nullable>enable</Nullable>
+	  <ImplicitUsings>enable</ImplicitUsings> 
     <UseWPF>true</UseWPF>
 	  <WarningsAsErrors>nullable</WarningsAsErrors>
   </PropertyGroup>
@@ -18,8 +19,8 @@
     <PackageReference Include="AutoFixture" Version="4.17.0" />
     <PackageReference Include="AutoFixture.AutoNSubstitute" Version="4.17.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="OpenConstructionSet" Version="2.2.0" />
-    <PackageReference Include="openconstructionset.dependencyinjection" Version="2.2.0" />
+    <PackageReference Include="OpenConstructionSet" Version="2.3.1" />
+    <PackageReference Include="openconstructionset.dependencyinjection" Version="2.3.1" />
   </ItemGroup>
 
   <ItemGroup>

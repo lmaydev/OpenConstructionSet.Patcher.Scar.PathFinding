@@ -1,24 +1,40 @@
 ﻿using OpenConstructionSet.Data;
 using OpenConstructionSet.Models;
+using OpenConstructionSet.Models.Enums;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
-using System;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class MainViewModel : BaseViewModel
     {
-        private const string ModName = "OCSP - SCAR's pathfinding fix";
         private const string ModFileName = ModName + ".mod";
+        private const string ModName = "OCSP - SCAR's pathfinding fix";
         private const string ReferenceModFileName = "SCAR's pathfinding fix.mod";
-        private bool busy;
-        private readonly IOcsDataContextBuilder builder;
-        private readonly IOcsIOService io;
+        private readonly IOcsBuilder builder;
+        private readonly IOcsInstallationService installationService;
         private readonly ScarPathfindingFixPatcher patcher;
+        private bool busy;
+
+        public MainViewModel(IOcsBuilder builder,
+                             IOcsInstallationService installationService,
+                             InstallationSelectionViewModel installationSelection,
+                             LoadOrderViewModel loadOrder,
+                             ScarPathfindingFixPatcher patcher)
+        {
+            this.builder = builder;
+            this.installationService = installationService;
+
+            InstallationSelection = installationSelection;
+
+            LoadOrder = loadOrder;
+
+            this.patcher = patcher;
+
+            CreateMod = new RelayCommand(StartCreateMod, CanCreateMod);
+        }
 
         public bool Busy
         {
@@ -30,37 +46,11 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
+        public RelayCommand CreateMod { get; }
+        public InstallationSelectionViewModel InstallationSelection { get; }
         public LoadOrderViewModel LoadOrder { get; }
 
-        public RelayCommand CreateMod { get; }
-
-        public InstallationSelectionViewModel InstallationSelection { get; }
-
-        public MainViewModel(IOcsDataContextBuilder builder,
-                             IOcsIOService io,
-                             InstallationSelectionViewModel installationSelection,
-                             LoadOrderViewModel loadOrder,
-                             ScarPathfindingFixPatcher patcher)
-        {
-            this.builder = builder;
-            this.io = io;
-            InstallationSelection = installationSelection;
-
-            LoadOrder = loadOrder;
-
-            this.patcher = patcher;
-
-            CreateMod = new RelayCommand(StartCreateMod, CanCreateMod);
-        }
-
         private bool CanCreateMod() => !Busy && LoadOrder.Mods.Any(m => m.Selected);
-
-        private void StartCreateMod()
-        {
-            Busy = true;
-
-            Task.Run(CreateModExecute);
-        }
 
         private void CreateModExecute()
         {
@@ -68,12 +58,12 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             {
                 var mods = LoadOrder.Mods.Where(m => m.Selected && m.Name != ReferenceModFileName && m.Name != ModFileName).Select(m => m.Path).ToList();
 
-                if (!mods.Any())
+                if (mods.Count == 0)
                 {
                     throw new Exception("No mods selected to patch");
                 }
 
-                var installation = InstallationSelection.SelectedInstallation.Installation;
+                var installation = InstallationSelection.SelectedInstallation;
 
                 var header = new Header(1, "LMayDev", "OpenConstructionSet compatibility patch to apply core values from SCAR's pathfinding fix to custom races");
                 header.References.Add(ReferenceModFileName);
@@ -84,24 +74,30 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                                                        Installation: installation,
                                                        Header: header,
                                                        BaseMods: mods,
-                                                       LoadGameFiles: Models.ModLoadType.Base);
+                                                       LoadGameFiles: ModLoadType.Base);
 
-                var context = builder.Build(options);
+                var context = builder.BuildAsync(options).GetAwaiter().GetResult();
 
-                patcher.Patch(installation, context);
+                patcher.PatchAsync(installation, context).GetAwaiter().GetResult();
 
-                context.Save();
+                context.SaveAsync().GetAwaiter().GetResult();
 
-                if (!installation.EnabledMods.Contains(ModFileName))
-                {
-                    installation.EnabledMods.Add(ModFileName);
+                var loadOrder = installationService.LoadEnabledModsAsync(installation)
+                                                   .GetAwaiter()
+                                                   .GetResult()
+                                                   .ToList();
 
-                    io.Write(installation.EnabledModsFile(), installation.EnabledMods);
-                }
+                loadOrder.RemoveAll(s => s.Equals(ModFileName, StringComparison.OrdinalIgnoreCase));
+
+                loadOrder.Add(ModFileName);
+
+                installationService.SaveEnabledModsAsync(installation, loadOrder)
+                                   .GetAwaiter()
+                                   .GetResult();
 
                 Application.Current.Dispatcher.Invoke(() => MessageBox.Show(
                     Application.Current.MainWindow,
-                    $"Mod created successfully",
+                    "Mod created successfully",
                     "Mod created!",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information));
@@ -121,6 +117,13 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 Busy = false;
             }
+        }
+
+        private void StartCreateMod()
+        {
+            Busy = true;
+
+            Task.Run(CreateModExecute);
         }
     }
 }
