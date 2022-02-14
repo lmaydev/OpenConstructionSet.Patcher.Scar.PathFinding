@@ -1,14 +1,14 @@
 ﻿<Application x:Class="OpenConstructionSet.Patcher.Scar.PathFinding.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ocs="clr-namespace:OpenConstructionSet.Models;assembly=OpenConstructionSet"
+             xmlns:ocs="clr-namespace:OpenConstructionSet.Installations;assembly=OpenConstructionSet"
              xmlns:v="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.View"
              xmlns:vm="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <vm:ServiceLocatorViewModel x:Key="ServiceLocator" />
 
-        <DataTemplate DataType="{x:Type ocs:InstallationInfo}">
+        <DataTemplate DataType="{x:Type ocs:IInstallation}">
             <v:InstallationView />
         </DataTemplate>
 

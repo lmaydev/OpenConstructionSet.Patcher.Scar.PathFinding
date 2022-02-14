@@ -18,8 +18,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.2" />
-    <PackageReference Include="OpenConstructionSet" Version="2.3.1" />
-    <PackageReference Include="openconstructionset.dependencyinjection" Version="2.3.1" />
+    <PackageReference Include="OpenConstructionSet" Version="3.0.0" />
+    <PackageReference Include="openconstructionset.dependencyinjection" Version="3.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

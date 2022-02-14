@@ -1,30 +1,20 @@
-﻿using OpenConstructionSet.Models;
+﻿using OpenConstructionSet.Installations;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
+using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     public class InstallationSelectionViewModel : BaseViewModel
     {
-        private InstallationInfo[] installations;
-        private InstallationInfo selectedInstallation;
+        private IInstallation[]? installations;
+        private IInstallation? selectedInstallation;
 
-        public InstallationSelectionViewModel(IOcsInstallationService installationService)
+        public InstallationSelectionViewModel(IInstallationService installationService)
         {
-            installations = installationService.LocateAllAsync()
-                                               .ToArrayAsync()
-                                               .AsTask()
-                                               .GetAwaiter()
-                                               .GetResult();
-
-            if (Installations.Length == 0)
-            {
-                throw new Exception("Could not locate any installations");
-            }
-
-            selectedInstallation = Installations[0];
+            Task.Run(() => LoadInstallations(installationService));
         }
 
-        public InstallationInfo[] Installations
+        public IInstallation[]? Installations
         {
             get => installations;
 
@@ -36,7 +26,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        public InstallationInfo SelectedInstallation
+        public IInstallation? SelectedInstallation
         {
             get => selectedInstallation;
 
@@ -48,9 +38,21 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 if (value is not null)
                 {
-                    Messenger<InstallationInfo>.Send(value);
+                    Messenger<SelectedInstallationChanged>.Send(new(value));
                 }
             }
+        }
+
+        private async Task LoadInstallations(IInstallationService installationService)
+        {
+            Installations = await installationService.DiscoverAllInstallationsAsync().ToArrayAsync();
+
+            if (Installations.Length == 0)
+            {
+                throw new Exception("Could not locate any installations");
+            }
+
+            SelectedInstallation = Installations[0];
         }
     }
 }

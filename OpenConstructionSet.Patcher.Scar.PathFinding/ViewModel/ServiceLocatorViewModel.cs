@@ -6,8 +6,8 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
     {
         public ServiceLocatorViewModel() =>
             MainViewModel = new ServiceCollection().AddOpenContructionSet()
-                                                   .AddSingleton<InstallationSelectionViewModel>()
                                                    .AddSingleton<LoadOrderViewModel>()
+                                                   .AddSingleton<InstallationSelectionViewModel>()
                                                    .AddSingleton<MainViewModel>()
                                                    .AddSingleton<ScarPathfindingFixPatcher>()
                                                    .BuildServiceProvider()
