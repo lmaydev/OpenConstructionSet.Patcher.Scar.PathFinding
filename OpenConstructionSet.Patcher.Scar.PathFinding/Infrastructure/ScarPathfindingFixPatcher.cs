@@ -9,7 +9,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
     {
         public async Task PatchAsync(IInstallation installation, IModContext context)
         {
-            if (!installation.TryFind("SCAR's pathfinding fix.mod", out var referenceFile))
+            if (!installation.TryFind("SCAR's pathfinding fix.mod", 2424904535, out var referenceFile))
             {
                 throw new Exception("Could not find SCAR's pathfinding fix.mod");
             }
