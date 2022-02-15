@@ -1,18 +1,20 @@
-﻿using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
+﻿using OpenConstructionSet.Installations;
+using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
-using System;
-using System.Linq;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     public class InstallationSelectionViewModel : BaseViewModel
     {
-        private InstallationViewModel selectedInstallation;
+        private IInstallation[]? installations;
+        private IInstallation? selectedInstallation;
 
-        private InstallationViewModel[] installations;
-        private readonly IOcsDiscoveryService discovery;
+        public InstallationSelectionViewModel(IInstallationService installationService)
+        {
+            Task.Run(() => LoadInstallations(installationService));
+        }
 
-        public InstallationViewModel[] Installations
+        public IInstallation[]? Installations
         {
             get => installations;
 
@@ -24,7 +26,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        public InstallationViewModel SelectedInstallation
+        public IInstallation? SelectedInstallation
         {
             get => selectedInstallation;
 
@@ -36,38 +38,21 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
                 if (value is not null)
                 {
-                    Messenger<InstallationViewModel>.Send(value);
+                    Messenger<SelectedInstallationChanged>.Send(new(value));
                 }
             }
         }
 
-        public InstallationSelectionViewModel(IOcsDiscoveryService discovery)
+        private async Task LoadInstallations(IInstallationService installationService)
         {
-            installations = discovery.DiscoverAllInstallations().Select(p => new InstallationViewModel(p)).ToArray();
+            Installations = await installationService.DiscoverAllInstallationsAsync().ToArrayAsync();
 
             if (Installations.Length == 0)
             {
                 throw new Exception("Could not locate any installations");
             }
 
-            selectedInstallation = Installations[0];
-
-            Messenger<Refresh>.MessageRecieved += MessageRecieved;
-            this.discovery = discovery;
-        }
-
-        private void MessageRecieved(Refresh obj)
-        {
-            var currentName = selectedInstallation.Name;
-
-            Installations = discovery.DiscoverAllInstallations().Select(p => new InstallationViewModel(p)).ToArray();
-
-            if (Installations.Length == 0)
-            {
-                throw new Exception("Could not locate any installations");
-            }
-
-            SelectedInstallation = Installations.FirstOrDefault(i => i.Name == currentName) ?? Installations[0];
+            SelectedInstallation = Installations[0];
         }
     }
 }

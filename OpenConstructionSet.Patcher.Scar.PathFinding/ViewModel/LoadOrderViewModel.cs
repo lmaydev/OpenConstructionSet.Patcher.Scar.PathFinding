@@ -1,76 +1,50 @@
-﻿using OpenConstructionSet.Models;
+﻿using Microsoft.Toolkit.Mvvm.Input;
+using OpenConstructionSet.Installations;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure;
 using OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure.Messages;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class LoadOrderViewModel : BaseViewModel
     {
-        private InstallationViewModel installation;
-        private int selectedModIndex;
-        private readonly IOcsIOService io;
+        private IInstallation? installation;
 
-        public RelayCommand Refresh { get; }
-
-        public RelayCommand<bool> Select { get; }
-
-        public RelayCommand SaveLoadOrder { get; }
-
-        public RelayCommand<ModViewModel> MoveUp { get; }
-
-        public RelayCommand<ModViewModel> MoveDown { get; }
-
-        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
-
-        public int SelectedModIndex
+        public LoadOrderViewModel()
         {
-            get => selectedModIndex;
-
-            set
-            {
-                selectedModIndex = value;
-                OnPropertyChanged(nameof(SelectedModIndex));
-            }
-        }
-
-        public LoadOrderViewModel(IOcsIOService io, InstallationSelectionViewModel installationsViewModel)
-        {
-            Messenger<InstallationViewModel>.MessageRecieved += InstallationChanged;
-
-            installation = installationsViewModel.SelectedInstallation;
-
-            this.io = io;
-
-            Refresh = new RelayCommand(RefreshExecute);
+            Messenger<SelectedInstallationChanged>.MessageRecieved += InstallationChanged;
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Messenger<Refresh>.MessageRecieved += _ => RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Refresh = new AsyncRelayCommand(RefreshExecuteAsync);
+            SaveLoadOrder = new AsyncRelayCommand(SaveLoadOrderExecuteAsync);
 
             Select = new RelayCommand<bool>(SelectExecute);
-
-            SaveLoadOrder = new RelayCommand(SaveLoadOrderExecute);
 
             MoveUp = new RelayCommand<ModViewModel>(MoveUpExecute);
 
             MoveDown = new RelayCommand<ModViewModel>(MoveDownExecute);
 
-            RefreshMods();
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
-        private void MoveUpExecute(ModViewModel? mod)
+        public ObservableCollection<ModViewModel> Mods { get; } = new ObservableCollection<ModViewModel>();
+        public RelayCommand<ModViewModel> MoveDown { get; }
+        public RelayCommand<ModViewModel> MoveUp { get; }
+        public AsyncRelayCommand Refresh { get; }
+        public AsyncRelayCommand SaveLoadOrder { get; }
+        public RelayCommand<bool> Select { get; }
+
+        private void InstallationChanged(SelectedInstallationChanged message)
         {
-            if (mod is null)
-            {
-                return;
-            }
+            this.installation = message.SelectedInstallation;
 
-            var index = Mods.IndexOf(mod);
-
-            var newIndex = Mods.IndexOf(mod) > 0 ? index - 1 : Mods.Count - 1;
-
-            Mods.Move(index, newIndex);
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            RefreshExecuteAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         private void MoveDownExecute(ModViewModel? mod)
@@ -87,59 +61,72 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             Mods.Move(index, newIndex);
         }
 
-        private void InstallationChanged(InstallationViewModel installation)
+        private void MoveUpExecute(ModViewModel? mod)
         {
-            this.installation = installation;
+            if (mod is null)
+            {
+                return;
+            }
 
-            RefreshMods();
+            var index = Mods.IndexOf(mod);
+
+            var newIndex = Mods.IndexOf(mod) > 0 ? index - 1 : Mods.Count - 1;
+
+            Mods.Move(index, newIndex);
+        }
+
+        private async Task RefreshExecuteAsync()
+        {
+            if (installation is null)
+            {
+                Mods.Clear();
+                return;
+            }
+
+            // Get all mods except the base game files
+            var mods = installation.GetMods().ExceptBy(OcsConstants.BaseMods, m => m.Filename).ToDictionary(m => m.Filename);
+
+            var loadOrder = await installation.ReadEnabledModsAsync();
+
+            Mods.Clear();
+
+            // Add enabled mods first in load order and select
+            foreach (var loadOrderItem in loadOrder.Where(m => mods.ContainsKey(m)))
+            {
+                var file = mods[loadOrderItem];
+
+                var header = await file.ReadHeaderAsync();
+
+                Mods.Add(new ModViewModel(file.Filename, file.Path, header, true));
+                mods.Remove(loadOrderItem);
+            }
+
+            // Add remaining mods un-selected
+            foreach (var file in mods.Values)
+            {
+                var header = await file.ReadHeaderAsync();
+
+                Mods.Add(new ModViewModel(file.Filename, file.Path, header, false));
+            }
+        }
+
+        private async Task SaveLoadOrderExecuteAsync()
+        {
+            if (installation is null)
+            {
+                return;
+            }
+
+            var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
+
+            await installation.WriteEnabledModsAsync(mods);
+
+            Messenger<Infrastructure.Messages.ShowMessageBox>.Send(new("Load order saved", "Saved!", MessageBoxImage.Information));
         }
 
         private void SelectExecute(bool select)
         {
             Mods.ForEach(m => m.Selected = select);
-        }
-
-        private void RefreshExecute()
-        {
-            Messenger<Refresh>.Send(new());
-
-            RefreshMods();
-        }
-
-        private void RefreshMods()
-        {
-            var folders = new List<ModFolder>
-            {
-                installation.Installation.Mod
-            };
-
-            if (installation.Installation.Content is not null)
-            {
-                folders.Add(installation.Installation.Content);
-            }
-
-            var mods = new Dictionary<string, ModFile>(folders.SelectMany(f => f.Mods)
-                                                              .Where(p => !OcsConstants.BaseMods.Contains(p.Key))
-                                                              .DistinctBy(p => p.Key));
-
-            Mods.Clear();
-
-            foreach (var loadOrderItem in installation.Installation.EnabledMods.Where(i => mods.ContainsKey(i)))
-            {
-                Mods.Add(new ModViewModel(loadOrderItem, mods[loadOrderItem].FullName, true));
-                mods.Remove(loadOrderItem);
-            }
-
-            mods.ForEach(p => Mods.Add(new ModViewModel(p.Key, p.Value.FullName, false)));
-        }
-
-        private void SaveLoadOrderExecute()
-        {
-            var mods = Mods.Where(m => m.Selected).Select(m => m.Name).ToArray();
-
-            io.Write(installation.Installation.EnabledModsFile(), mods);
-
-            MessageBox.Show(Application.Current.MainWindow, "Load order saved", "Saved!", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

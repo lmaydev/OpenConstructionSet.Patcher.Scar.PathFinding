@@ -1,37 +1,29 @@
 ﻿using OpenConstructionSet.Data;
-using OpenConstructionSet.Data.Models;
-using OpenConstructionSet.Models;
-using System;
-using System.Linq;
-using System.Windows;
+using OpenConstructionSet.Installations;
+using OpenConstructionSet.Mods;
+using OpenConstructionSet.Mods.Context;
 
 namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 {
     internal class ScarPathfindingFixPatcher
     {
-        private readonly IOcsIOService io;
-
-        public ScarPathfindingFixPatcher(IOcsIOService io)
+        public async Task PatchAsync(IInstallation installation, IModContext context)
         {
-            this.io = io;
-        }
-
-        public void Patch(Installation installation, OcsDataContext context)
-        {
-            if (!installation.Mod.Mods.TryGetValue("SCAR's pathfinding fix.mod", out var referneceMod))
+            if (!installation.TryFind("SCAR's pathfinding fix.mod", 2424904535, out var referenceFile))
             {
                 throw new Exception("Could not find SCAR's pathfinding fix.mod");
             }
 
-            var referenceData = io.ReadDataFile(referneceMod.FullName) ?? throw new Exception("Failed to read SCAR's pathfinding fix.mod");
+            var referenceData = await referenceFile.ReadDataAsync();
 
-            context.Header.Version = referenceData.Header!.Version;
+            context.Header.Version = referenceData.Header.Version;
 
-            var greenlander = referenceData.Items.Find(i => i.StringId == "17-gamedata.quack")!;
+            var greenlander = referenceData.Items.Find(i => i.Name == "Greenlander") ?? throw new Exception("Failed to load Greenlander item");
+
             var pathfindAcceleration = greenlander.Values["pathfind acceleration"];
             var waterAvoidance = greenlander.Values["water avoidance"];
 
-            foreach (var race in context.Items.Values.OfType(ItemType.Race).Where(IsNotAnimal))
+            foreach (var race in context.Items.OfType(ItemType.Race).Where(IsNotAnimal))
             {
                 Console.WriteLine("Updating " + race.Name);
                 race.Values["pathfind acceleration"] = pathfindAcceleration;
@@ -43,7 +35,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
                 }
             }
 
-            bool IsNotAnimal(DataItem race) => race.Values.TryGetValue("editor limits", out var value)
+            static bool IsNotAnimal(ModItem race) => race.Values.TryGetValue("editor limits", out var value)
                                                && value is FileValue file
                                                && !string.IsNullOrEmpty(file.Path);
         }
