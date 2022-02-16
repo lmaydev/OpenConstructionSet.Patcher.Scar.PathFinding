@@ -3,25 +3,25 @@
 ## Overview
 This application uses the [OpenConstructionSet](https://github.com/lmaydev/OpenConstructionSet) to automatically apply key values from SCAR's pathfinding fix and create a compatibility mod.
 
-# Features
+## Features
 
 - Run from anywhere.
 - Detect all Kenshi installations.
-- Mod discovery. Works for mod and steam folders.
+- Discover mods from the Mods and steam workshop folders.
 - Read edit and save enabled mods and their load order.
-- One click compatibility mod creation
+- One click compatibility mod creation.
 
-### [SCARaw](https://www.nexusmods.com/kenshi/users/16691049)
+## [SCARaw](https://www.nexusmods.com/kenshi/users/16691049)
 Massive thanks to Scar for helping to get this project off the ground and keep it moving.
 Also for the OCS project icon we are using.
 
-### Requirements
+## Requirements
 
  - [Kenshi](https://lofigames.com/)
  - [.Net 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0/runtime)
  - [SCAR's pathfinding fix](https://www.nexusmods.com/kenshi/mods/602)
 
-### Installation
+## Installation
 
  1. Download a release zip file from the [Releases Page](https://github.com/lmaydev/OpenConstructionSet.Patcher.Scar.PathFinding/releases)
  2. Unzip.
