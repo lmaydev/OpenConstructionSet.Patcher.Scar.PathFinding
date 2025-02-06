@@ -11,7 +11,7 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
 
         public InstallationSelectionViewModel(IInstallationService installationService)
         {
-            Task.Run(() => LoadInstallations(installationService));
+            LoadInstallations(installationService);
         }
 
         public IInstallation[]? Installations
@@ -43,9 +43,9 @@ namespace OpenConstructionSet.Patcher.Scar.PathFinding.ViewModel
             }
         }
 
-        private async Task LoadInstallations(IInstallationService installationService)
+        private void LoadInstallations(IInstallationService installationService)
         {
-            Installations = await installationService.DiscoverAllInstallationsAsync().ToArrayAsync();
+            Installations = installationService.LocateAll().ToArray();
 
             if (Installations.Length == 0)
             {
