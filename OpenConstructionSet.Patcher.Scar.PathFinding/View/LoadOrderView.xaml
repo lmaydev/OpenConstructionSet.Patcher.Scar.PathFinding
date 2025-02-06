@@ -40,7 +40,9 @@
                             </Grid.RowDefinitions>
                             <ContentPresenter ContentSource="Header" />
                             <Separator Grid.Row="1" />
-                            <ItemsPresenter Grid.Row="2" />
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Visible">
+                                <ItemsPresenter />
+                            </ScrollViewer>
                         </Grid>
                     </Border>
                 </ControlTemplate>

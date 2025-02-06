@@ -18,13 +18,12 @@ Also for the OCS project icon we are using.
 ## Requirements
 
  - [Kenshi](https://lofigames.com/)
- - [.Net 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0/runtime)
+ - [.Net 9](https://dotnet.microsoft.com/en-us/download/dotnet/9.0/runtime)
  - [SCAR's pathfinding fix](https://www.nexusmods.com/kenshi/mods/602)
 
 ## Installation
 
- 1. Download a release zip file from the [Releases Page](https://github.com/lmaydev/OpenConstructionSet.Patcher.Scar.PathFinding/releases)
- 2. Unzip.
+Download one of the executables from the release. The SelfContained release doesn't require the .Net9 runtime to be installed.
 
 # Use
 

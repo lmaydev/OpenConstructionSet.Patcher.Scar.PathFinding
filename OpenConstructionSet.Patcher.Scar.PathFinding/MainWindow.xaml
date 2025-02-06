@@ -6,7 +6,7 @@
         xmlns:infra="clr-namespace:OpenConstructionSet.Patcher.Scar.PathFinding.Infrastructure"
         mc:Ignorable="d"
         DataContext="{Binding MainViewModel, Source={StaticResource ServiceLocator}}"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="300" Width="600" WindowState="Maximized">
     <Window.Resources>
         <infra:InverseBoolValueConverter x:Key="InverseBoolValueConverter" />
     </Window.Resources>
